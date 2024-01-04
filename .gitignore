@@ -1,0 +1,6 @@
+JuliaMNACompiled
+*.so
+*.o
+*/perfiles
+*.perf
+*.data.*
