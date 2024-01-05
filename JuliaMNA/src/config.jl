@@ -13,10 +13,11 @@ end
 
 varDict = Dict()
 # Macro called @var that adds a variable defintion of type x = y to the varDict dictionary
-#FIXME: Current implementation calls env() twice, once when registering the variable and once during eval(ex.args[2])
 macro var(ex)
-    varDict[String(ex.args[1])] = eval(ex.args[2])
-    eval(ex)
+    lhs = ex.args[1]
+    rhs = eval(ex.args[2])
+    varDict[String(lhs)] = rhs
+    eval(:($lhs = $rhs))
 end
 
 function create_env_file()
