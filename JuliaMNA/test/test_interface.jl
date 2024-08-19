@@ -1,7 +1,7 @@
 begin
     ENV["JULIA_DEBUG"] = "JuliaMNA"
-    push!(LOAD_PATH, "/home/wege/Projects/dpsim-refactor/dpsim/src/SolverPlugins/julia/JuliaMNA")
-
+    push!(LOAD_PATH, pwd()*"/JuliaMNA")
+    @info LOAD_PATH
     using Pkg
     Pkg.activate(".")
     Pkg.status()
@@ -45,7 +45,7 @@ begin
         rhs_vector = parse.(Float64, split(rhs_vector_strings[1]))
     end
 
-    GC.enable(false) # We cannot be sure that system_matrix is garbage collected before the pointer is passed... 
+    GC.enable(false) # We cannot be sure that system_matrix is garbage collected before the pointer is passed...
     # system_matrix = read_input(ArrayPath("$(@__DIR__)/system_matrix_small.txt"))
     # system_matrix = read_input(ArrayPath("$(@__DIR__)/system_matrix.txt"))
     system_matrix = read_input(ArrayPath("$(@__DIR__)/system_matrix_big.txt"))

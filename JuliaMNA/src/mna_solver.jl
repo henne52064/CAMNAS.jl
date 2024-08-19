@@ -78,10 +78,10 @@ function determine_accelerator()
             set_accelerator!(AbstractAccelerator())
             # accelerator = AbstractAccelerator()
         elseif typeof(accelerator) == AbstractAccelerator
-            set_accelerator!(CUDAccelerator()) 
+            set_accelerator!(CUDAccelerator())
             # accelerator = DummyAccelerator()
         elseif typeof(accelerator) == CUDAccelerator
-            set_accelerator!(AbstractAccelerator()) 
+            set_accelerator!(AbstractAccelerator())
             # accelerator = DummyAccelerator()
         end
         @debug "Accelerator changed to: $(typeof(accelerator))"

@@ -18,11 +18,11 @@ include("mna_solver.jl")
 Struct representation of the DPsim sparse matrix in CSR format. It is used to represent the system matrix for the mna solver library.
 
 Fields:
-- `values::Ptr{Cdouble}`    # size: nnz  
-- `rowIndex::Ptr{Cint}`     # size: row_number + 1  
-- `colIndex::Ptr{Cint}`     # size: nnz  
-- `row_number::Cint`        # number of rows of the matrix  
-- `nnz::Cint`               # number of non-zero elements in the matrix  
+- `values::Ptr{Cdouble}`    # size: nnz
+- `rowIndex::Ptr{Cint}`     # size: row_number + 1
+- `colIndex::Ptr{Cint}`     # size: nnz
+- `row_number::Cint`        # number of rows of the matrix
+- `nnz::Cint`               # number of non-zero elements in the matrix
 """
 mutable struct dpsim_csr_matrix
     values::Ptr{Cdouble}    # size: nnz
@@ -47,12 +47,12 @@ function init end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     sparse_mat = mat_ctojl(matrix_ptr)
     mna_init(sparse_mat)
-    
+
     lu_mat = mna_decomp(sparse_mat)
     @debug lu_mat
     @debug typeof(lu_mat)
     global system_matrix = lu_mat
-    
+
 
     # mna_solve(system_matrix, ones(sparse_mat.m))
 
@@ -72,7 +72,7 @@ Base.@ccallable function decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
 
     lu_mat = mna_decomp(sparse_mat)
     global system_matrix = lu_mat
-    
+
     return 0
 end
 
@@ -113,7 +113,7 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     result = mna_solve(system_matrix, rhs)
 
     @debug "result = $result | $(typeof(result))"
-    
+
     # FIXME: Is this required anymore?
     # result = Array(result) #make sure result is a normal array on host
 
