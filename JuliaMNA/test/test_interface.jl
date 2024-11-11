@@ -3,7 +3,7 @@ begin
     push!(LOAD_PATH, pwd()*"/JuliaMNA")
     @info LOAD_PATH
     using Pkg
-    Pkg.activate(".")
+    Pkg.activate(LOAD_PATH[4])
     Pkg.status()
     # Pkg.instantiate()
 
