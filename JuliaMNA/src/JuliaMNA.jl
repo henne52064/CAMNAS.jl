@@ -94,22 +94,6 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug "rhs = $rhs"
     @debug "lhs = $(unsafe_wrap(Array, lhs_values_ptr, dim))"
 
-    if rand(0:100) > 90
-        # Write rhs and system_matrix to file
-        open("rhs_new.txt", "w") do io
-            # for value in rhs
-            #     println(io, value)
-            # end
-            print(io, rhs)
-        end
-        open("system_matrix_new.txt", "w") do io
-            # for value in system_matrix
-            #     println(io, value)
-            # end
-            print(io, system_matrix)
-        end
-    end
-
     result = mna_solve(system_matrix, rhs)
 
     @debug "result = $result | $(typeof(result))"
