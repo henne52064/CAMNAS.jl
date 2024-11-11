@@ -1,2 +1,6 @@
 using CUDA
-x = CuArray(ones(1))
+try
+    has_cuda() ? CuArray(ones(1)) : nothing
+catch e
+    @warn "CUDA not available. Resume precompilation..."
+end
