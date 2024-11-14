@@ -16,6 +16,7 @@ PackageCompiler.create_library("$(build_dir)/..", target_dir;
                                 precompile_execution_file="$(@__DIR__)/precompile_statements.jl",
                                 incremental=true,
                                 filter_stdlibs=false,
+                                include_lazy_artifacts=true,
                                 header_files = ["$(@__DIR__)/juliamna.h"],
-                                force=true
+                                force=true,
                             )
