@@ -53,9 +53,6 @@ Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     @debug typeof(lu_mat)
     global system_matrix = lu_mat
 
-
-    # mna_solve(system_matrix, ones(sparse_mat.m))
-
     return 0
 end
 
@@ -86,9 +83,7 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug @isdefined system_matrix
     (@isdefined system_matrix) || ( error("System matrix not initialized! Call init or decomp first!"); return -1 )
 
-    dim = size(system_matrix)[1] # Matrix is quadratic, so we can use m or n
-
-
+    dim = size(system_matrix[1])[1] # Matrix is quadratic, so we can use m or n
     rhs = unsafe_wrap(Array, rhs_values_ptr, dim)
 
     @debug "rhs = $rhs"
@@ -97,13 +92,6 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     result = mna_solve(system_matrix, rhs)
 
     @debug "result = $result | $(typeof(result))"
-
-    # FIXME: Is this required anymore?
-    # result = Array(result) #make sure result is a normal array on host
-
-    # for (index, value) in enumerate(result)
-    #     unsafe_store!(lhs_values_ptr, value, index)
-    # end
 
     unsafe_copyto!(lhs_values_ptr, pointer(result), dim)
 
@@ -150,14 +138,7 @@ function mat_ctojl(matrix_ptr::Ptr{dpsim_csr_matrix})
         unsafe_wrap(Array, mat_ptr.values, mat_ptr.nnz) # Non-zero values
     )
     @debug "sparse_mat = $(dump(sparse_mat))"
-    # TODO: Refactor this into own functions for system matrix and rhs
-    # open("system_matrix_sparse_mat.txt", "w") do io
-    #     println(io, unsafe_wrap(Array, mat_ptr.values, mat_ptr.nnz)) # Row pointers
-    #     println(io, unsafe_wrap(Array, mat_ptr.rowIndex, mat_ptr.row_number+1))
-    #     println(io, unsafe_wrap(Array, mat_ptr.colIndex, mat_ptr.nnz))
-    #     println(io,mat_ptr.row_number)
-    #     println(io,mat_ptr.nnz)
-    # end
+   
     return sparse_mat
 end
 end # module

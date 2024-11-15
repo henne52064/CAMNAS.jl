@@ -17,13 +17,10 @@ system_matrix = nothing
 
 
 function find_accelerator()
-    # @info ENV
-    # CUDA Accelerator
     if allow_gpu && has_cuda()
         @debug "CUDA available! Try using CUDA accelerator..."
         try
             CuArray(ones(1))
-            # push!(accelerators, CUDAccelerator())
             accelerator = CUDAccelerator()
             @info "CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
         catch e
@@ -51,7 +48,7 @@ function file_watcher()
     @debug "Watching sytem environment at : $file_system_env"
     global run
     while run
-        @debug "Waiting for file change..."
+        # @debug "Waiting for file change..."
         fw = watch_file(file_system_env, 3)
         if fw.changed
             @debug "Filewatcher triggered!"
@@ -63,26 +60,22 @@ function file_watcher()
         end
     end
     @debug "File watcher stopped!"
-    # @info "File watcher stopped!"
 end
 
 function determine_accelerator()
     global accelerator
     while true
         val = take!(system_environment)
-        @debug "Received new system environment!"
+        @debug "Received new system environment!: $val"
 
         val === nothing ? break : nothing
 
         if typeof(accelerator) == DummyAccelerator
             set_accelerator!(AbstractAccelerator())
-            # accelerator = AbstractAccelerator()
         elseif typeof(accelerator) == AbstractAccelerator
             set_accelerator!(CUDAccelerator())
-            # accelerator = DummyAccelerator()
         elseif typeof(accelerator) == CUDAccelerator
             set_accelerator!(AbstractAccelerator())
-            # accelerator = DummyAccelerator()
         end
         @debug "Accelerator changed to: $(typeof(accelerator))"
     end
@@ -90,7 +83,7 @@ function determine_accelerator()
 end
 
 function set_accelerator!(acc)
-    global system_matrix = mna_decomp(csr_mat, acc)
+    @debug "Setting accelerator to: $(typeof(acc))"
     global accelerator = acc
 end
 
@@ -120,26 +113,26 @@ end
 
 function mna_decomp(sparse_mat, accelerator::AbstractAccelerator)
     lu_decomp = SparseArrays.lu(sparse_mat)
-    @info "CPU"
+    @debug "CPU $lu_decomp"
     return lu_decomp
 end
 
 function mna_decomp(sparse_mat, accelerator::DummyAccelerator)
     lu_decomp = SparseArrays.lu(sparse_mat)
-    @info "Dummy"
+    @debug "Dummy"
     return lu_decomp
 end
 
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
     matrix = CuSparseMatrixCSR(CuArray(sparse_mat)) # Sparse GPU implementation
     lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF)
-    @info "GPU"
+    @debug "GPU $lu_decomp"
     return lu_decomp
 end
 
 function mna_decomp(sparse_mat)
     set_csr_mat(sparse_mat)
-    return mna_decomp(sparse_mat, accelerator)
+    return [mna_decomp(sparse_mat, AbstractAccelerator()), mna_decomp(sparse_mat, CUDAccelerator())]
 end
 
 function mna_solve(system_matrix, rhs, accelerator::AbstractAccelerator)
@@ -151,9 +144,16 @@ function mna_solve(system_matrix, rhs, accelerator::CUDAccelerator)
     ldiv!(system_matrix, rhs_d)
     return Array(rhs_d)
 end
-# mna_solve(system_matrix, rhs) = mna_solve(system_matrix, rhs, accelerator)
-function mna_solve(system_matrix, rhs)
-    println(typeof(accelerator))
-    return mna_solve(system_matrix, rhs, accelerator)
+
+function mna_solve(my_system_matrix, rhs)
+
+    # Allow printing accelerator without debug statements
+    (haskey(ENV, "PRINT_ACCELERATOR") && ENV["PRINT_ACCELERATOR"] == "true" ?
+        println(typeof(accelerator))
+        : nothing)
+
+    typeof(accelerator) == CUDAccelerator ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
+
+    return mna_solve(sys_mat, rhs, accelerator)
 end
 mna_solve(system_matrix, rhs, accelerator::DummyAccelerator) = mna_solve(system_matrix, rhs, AbstractAccelerator())
