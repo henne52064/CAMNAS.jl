@@ -20,7 +20,7 @@ juliamna.so: JuliaMNA/build/build.jl JuliaMNA/src/JuliaMNA.jl JuliaMNA/src/mna_s
 	$(JULIA) --project=JuliaMNA --threads=auto --startup-file=no JuliaMNA/build/build.jl $(TARGET)
 
 wrapper.o:
-	gcc -c -fPIC -I$(ROOT_DIR)/JuliaMNACompiled/include -I$(ROOT_DIR)/../../../include dpsim_wrapper.c
+	gcc -c -fPIC -O2 -I$(ROOT_DIR)/JuliaMNACompiled/include -I$(ROOT_DIR)/../../../include dpsim_wrapper.c
 
 plugin.so: wrapper.o
 	gcc -shared -o juliamna.so dpsim_wrapper.o  -L$(ROOT_DIR)/JuliaMNACompiled/lib -ljuliamna
