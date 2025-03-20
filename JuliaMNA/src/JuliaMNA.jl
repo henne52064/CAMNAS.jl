@@ -107,7 +107,7 @@ __Currently not implemented...__
 """
 function cleanup end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function cleanup()::Cvoid
-    mna_cleanup()
+    #mna_cleanup()
 end
 
 """
@@ -138,7 +138,7 @@ function mat_ctojl(matrix_ptr::Ptr{dpsim_csr_matrix})
         unsafe_wrap(Array, mat_ptr.values, mat_ptr.nnz) # Non-zero values
     )
     @debug "sparse_mat = $(dump(sparse_mat))"
-   
+
     return sparse_mat
 end
 end # module

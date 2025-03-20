@@ -21,7 +21,7 @@ void __attribute__((destructor)) shutdown_lib (void){
     printf("This is the library destructor...\n");
     printf("Shutting down Julia...\n");
     printf("==============================\n");
-
+    // cleanup();
     shutdown_julia(0);
 }
 
