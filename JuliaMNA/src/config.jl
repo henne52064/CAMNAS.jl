@@ -1,5 +1,6 @@
 export hwAwarenessDisabled
 export allow_cpu, allow_gpu
+export varDict
 
 function env(env_var, default)
     if haskey(ENV, env_var)

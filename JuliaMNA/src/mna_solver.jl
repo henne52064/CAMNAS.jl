@@ -56,7 +56,9 @@ function file_watcher()
             if isready(system_environment)
                 take!(system_environment)
             end
+
             put!(system_environment, content)
+            @debug "System environment updated!"
         end
     end
     @debug "File watcher stopped!"
@@ -68,16 +70,39 @@ function determine_accelerator()
         val = take!(system_environment)
         @debug "Received new system environment!: $val"
 
+        for line in split(val, '\n')[2:end]
+            if length(line) == 0
+                continue
+            end
+            key, value = split(line)
+            if key == "allow_cpu"
+                allow_cpu = parse(Bool, value)
+                varDict["allow_cpu"] = allow_cpu
+            elseif key == "allow_gpu"
+                allow_gpu = parse(Bool, value)
+                varDict["allow_gpu"] = allow_gpu
+            else
+                varDict[key] = parse(Bool, value)
+            end
+        end
+
+        @debug "Allow CPU is: $(varDict["allow_cpu"])"
+        @debug "Allow GPU is: $(varDict["allow_gpu"])"
+        @debug "$varDict"
+
+        # Stop accelerator determination if nothing-value is received
         val === nothing ? break : nothing
 
-        if typeof(accelerator) == DummyAccelerator
-            set_accelerator!(AbstractAccelerator())
-        elseif typeof(accelerator) == AbstractAccelerator
-            set_accelerator!(CUDAccelerator())
-        elseif typeof(accelerator) == CUDAccelerator
-            set_accelerator!(AbstractAccelerator())
+        # Currently, we implement a GPU-favoring approach
+        if varDict["allow_gpu"]
+            typeof(accelerator) == CUDAccelerator || set_accelerator!(CUDAccelerator())
+        elseif varDict["allow_cpu"]
+            typeof(accelerator) == DummyAccelerator || set_accelerator!(DummyAccelerator())
+        else
+            typeof(accelerator) == AbstractAccelerator || set_accelerator!(AbstractAccelerator())
         end
-        @debug "Accelerator changed to: $(typeof(accelerator))"
+
+        @info "Accelerator changed to: $(typeof(accelerator))"
     end
     @debug "Accelerator determination stopped!"
 end
@@ -104,6 +129,7 @@ function mna_cleanup()
     put!(system_environment, nothing) # Signal to stop
     wait(da)
     close(system_environment)
+    @debug "Cleanup done!"
 end
 
 # Solving Logic
@@ -149,9 +175,8 @@ function mna_solve(my_system_matrix, rhs)
 
     # Allow printing accelerator without debug statements
     (haskey(ENV, "PRINT_ACCELERATOR") && ENV["PRINT_ACCELERATOR"] == "true" ?
-        println(typeof(accelerator))
+        print(typeof(accelerator))
         : nothing)
-
     typeof(accelerator) == CUDAccelerator ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 
     return mna_solve(sys_mat, rhs, accelerator)
