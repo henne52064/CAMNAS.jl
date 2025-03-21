@@ -22,7 +22,7 @@ Building:
 - `julia>=1.10`
 - ...
 
-For Julia package depdendencies, see [Project.toml](CAMNAS/Project.toml#6)
+For Julia package depdendencies, see [Project.toml](Project.toml)
 
 ## Usage
 
