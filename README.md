@@ -55,3 +55,9 @@ Developing or testing a shared library or plugin can be tideous, especially due 
 This script allows testing all externally accessible functions directly within Julia.
 
 To ensure compatibility with DPsim, three test case inputs of different sizes are provided. The specific input size can be adjusted using the `inputSize` variable at the beginning of the script. All inputs are designed to satisfy the equation `x = A \ b`, where `A` is a sparse matrix in CSR format and `b` is a vector.
+
+
+## Author
+- Felix Wege [fwege@eonerc.rwth-aachen.de](mailto:fwege@eonerc.rwth-aachen.de)
+
+[Institute for Automation of Complex Power Systems (ACS) EON Energy Research Center (EONERC) RWTH University Aachen, Germany](http://www.acs.eonerc.rwth-aachen.de/)
