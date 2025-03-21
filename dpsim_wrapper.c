@@ -21,11 +21,10 @@ void __attribute__((destructor)) shutdown_lib (void){
     printf("This is the library destructor...\n");
     printf("Shutting down Julia...\n");
     printf("==============================\n");
-    // cleanup();
     shutdown_julia(0);
 }
 
-static const char* PLUGIN_NAME = "juliamna";
+static const char* PLUGIN_NAME = "camnasjl";
 static struct dpsim_mna_plugin solver_plugin = {
 	.log = log,
 	.init = init,
