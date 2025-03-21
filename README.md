@@ -1,6 +1,6 @@
 # CAMNAS.jl
 
-**C**ontext-**A**ware **M**odified **N**odal **A**nalysis **S**olver Plugin for the Dynamic Phasor Power System Simulator [DPsim](https://github.com/sogno-platform/dpsim).
+**C**ontext-**A**ware **M**odified **N**odal **A**nalysis **S**olver Plugin for the Dynamic Power System Simulator [DPsim](https://github.com/sogno-platform/dpsim).
 
 CAMNAS is a simple Julia implementation of a Modified Nodal Analysis (MNA) solver designed for integration as a solver plugin in DPsim.
 Its key features include:
@@ -11,18 +11,20 @@ Its key features include:
 
 ## Building
 ```
-git clone XXX
-cd CAMNAS.jl && make
+git clone https://github.com/RWTH-ACS/CAMNAS.jl.git
+cd CAMNAS.jl
+julia --project=$(pwd) --eval="using Pkgs;Pkg.instantiate()"
+make
 ```
 
-## Deps
-Building:
+## Dependencies
+Build Depedencies:
+- `julia>=1.10`
 - `gcc`
 - `make`
-- `julia>=1.10`
 - ...
 
-For Julia package depdendencies, see [Project.toml](Project.toml)
+For an overview of the required Julia package depdendencies, see the `[deps]` section in [Project.toml](CAMNAS/Project.toml#6).
 
 ## Usage
 
@@ -30,16 +32,18 @@ For Julia package depdendencies, see [Project.toml](Project.toml)
 <dpsim-scenario> -U "Plugin" -P "camnasjl"
 ```
 
-For more information on using MNASolverPlugins in DPsim, see: 
+To allow CAMNAS and DPsim to dynamically link the necessary libraries, ensure that your `LD_LIBRARY_PATH` includes both the CAMNAS base directory and `CAMNASCompiled/lib/`.
+
+For more information on the interaction of DPsim and the Plugin, see [DPsim's MNASolverPlugin.cpp](https://github.com/sogno-platform/dpsim/blob/master/dpsim/src/MNASolverPlugin.cpp).
 
 ### Environment Variables
 Certain features and behavior patterns of the solver can be managed through environment variables. For details, refer to the following:
 
-| Variable | Values (**default**) | Description | 
-| :--: | :--: | :--: |
-|JL_MNA_DISABLE_AWARENESS|**true**/false| [CONTROL] Toggle accelerater detection/awareness. When disabled, calculations will always fallback to CPU.|
-|JL_MNA_ALLOW_CPU|**true**/false| [CONTROL] Allow accelerator selection to use CPU. |
-|JL_MNA_FORCE_CPU|true/**false**|[CONTROL] *Currently unused...* |
-|JL_MNA_ALLOW_GPU|**true**/false|[CONTROL] Allow accelerator selection to use CPU. |
-|JL_MNA_FORCE_GPU|true/**false**|[CONTROL] *Currently unused...*|
-|PRINT_ACCELERATOR|true/**false**|[DEBUG] Print used accelerator type during solving steps, without DEBUG statements.|
+| Variable | Values [default] | [TYPE] Description | 
+| :--: | :--: | :-- |
+|JL_MNA_DISABLE_AWARENESS|Boolean [false]| [CONTROL] Toggle accelerater detection/awareness. When disabled, calculations will always fallback to CPU.|
+|JL_MNA_ALLOW_CPU|Boolean [true]| [CONTROL] Allow accelerator selection to use CPU. |
+|JL_MNA_ALLOW_GPU|Boolean [true]|[CONTROL] Allow accelerator selection to use CPU. |
+|JL_MNA_FORCE_CPU|Boolean [false]|[CONTROL] *Currently unused...* |
+|JL_MNA_FORCE_GPU|Boolean [false]|[CONTROL] *Currently unused...*|
+|PRINT_ACCELERATOR| Boolean [false]| [DEBUG] Print currently used accelerator independent from debug statements.|
