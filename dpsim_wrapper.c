@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include <julia_init.h>
-#include <juliamna.h>
+#include <camnasjl.h>
 
 #include <dpsim/MNASolverDynInterface.h>
 

@@ -1,13 +1,13 @@
 begin
-    ENV["JULIA_DEBUG"] = "JuliaMNA"
-    push!(LOAD_PATH, pwd()*"/JuliaMNA")
+    ENV["JULIA_DEBUG"] = "CAMNAS"
+    push!(LOAD_PATH, pwd()*"/CAMNAS")
     @info LOAD_PATH
     using Pkg
     Pkg.activate(LOAD_PATH[4])
     Pkg.status()
     # Pkg.instantiate()
 
-    using JuliaMNA
+    using CAMNAS
     using Profile
 
     struct ArrayPath path::String end
@@ -61,8 +61,8 @@ begin
 
     lhs_vector = zeros(Float64, length(rhs_vector))
     rhs_reset = ones(Float64, length(rhs_vector))
-end
-begin
+# end
+# begin
     init(Base.unsafe_convert(Ptr{dpsim_csr_matrix}, system_matrix_ptr))
     GC.enable(true)
 

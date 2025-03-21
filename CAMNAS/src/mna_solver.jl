@@ -179,6 +179,13 @@ function mna_solve(my_system_matrix, rhs)
         : nothing)
     typeof(accelerator) == CUDAccelerator ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 
+    # t1 = time()
+    res = mna_solve(sys_mat, rhs, accelerator)
+    # t2 = time()
+    (haskey(ENV, "PRINT_ACCELERATOR") && ENV["PRINT_ACCELERATOR"] == "true" ?
+        print(" / Time: $(t2 - t1)\n")
+        : nothing)
+    # return res
     return mna_solve(sys_mat, rhs, accelerator)
 end
 mna_solve(system_matrix, rhs, accelerator::DummyAccelerator) = mna_solve(system_matrix, rhs, AbstractAccelerator())

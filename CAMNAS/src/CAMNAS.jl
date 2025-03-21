@@ -1,5 +1,5 @@
 # Main module providing ccallable wrapper functions for the mna solver library
-module JuliaMNA
+module CAMNAS
 
 export get_mna_plugin, init, decomp, solve, cleanup, log
 export dpsim_csr_matrix
