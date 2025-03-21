@@ -78,7 +78,7 @@ end
 
 Solve the system `l = A \\ r` with the system matrix `A`, the given right-hand side vector `r` and store the result in the given left-hand side values pointer `l`.
 """
-function solve end
+function solve end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr{Cdouble})::Cint
     @debug @isdefined system_matrix
     (@isdefined system_matrix) || ( error("System matrix not initialized! Call init or decomp first!"); return -1 )

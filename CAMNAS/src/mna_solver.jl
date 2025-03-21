@@ -22,12 +22,12 @@ function find_accelerator()
         try
             CuArray(ones(1))
             accelerator = CUDAccelerator()
-            @info "CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
+            @info "[CAMNAS] CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
         catch e
             @warn "CUDA driver available but could not load CuArrays package."
         end
     elseif !@isdefined accelerator
-        @info "No accelerator found."
+        @info "[CAMNAS] No accelerator found."
         accelerator = AbstractAccelerator()
     end
     return accelerator
@@ -35,7 +35,7 @@ end
 
 function systemcheck()
     if hwAwarenessDisabled
-        @info "Hardware awareness disabled... Using Fallback implementation"
+        @info "[CAMNAS] Hardware awareness disabled... Using Fallback implementation"
         return AbstractAccelerator()
     else
         return find_accelerator()
@@ -102,7 +102,7 @@ function determine_accelerator()
             typeof(accelerator) == AbstractAccelerator || set_accelerator!(AbstractAccelerator())
         end
 
-        @info "Accelerator changed to: $(typeof(accelerator))"
+        @info "[CAMNAS] Accelerator changed to: $(typeof(accelerator))"
     end
     @debug "Accelerator determination stopped!"
 end
@@ -179,13 +179,6 @@ function mna_solve(my_system_matrix, rhs)
         : nothing)
     typeof(accelerator) == CUDAccelerator ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 
-    # t1 = time()
-    res = mna_solve(sys_mat, rhs, accelerator)
-    # t2 = time()
-    (haskey(ENV, "PRINT_ACCELERATOR") && ENV["PRINT_ACCELERATOR"] == "true" ?
-        print(" / Time: $(t2 - t1)\n")
-        : nothing)
-    # return res
     return mna_solve(sys_mat, rhs, accelerator)
 end
 mna_solve(system_matrix, rhs, accelerator::DummyAccelerator) = mna_solve(system_matrix, rhs, AbstractAccelerator())

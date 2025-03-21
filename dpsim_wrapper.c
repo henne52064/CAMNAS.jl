@@ -7,9 +7,7 @@
 #include <dpsim/MNASolverDynInterface.h>
 
 void __attribute__((constructor)) init_lib (void){
-    printf("This is the library constructor...\n");
-    printf("Initializing Julia...\n");
-    printf("==============================\n");
+    printf("[CAMNAS] Initializing Julia...\n");
     char** argv;
     int argc = 0;
 
@@ -18,9 +16,7 @@ void __attribute__((constructor)) init_lib (void){
 }
 
 void __attribute__((destructor)) shutdown_lib (void){
-    printf("This is the library destructor...\n");
-    printf("Shutting down Julia...\n");
-    printf("==============================\n");
+    printf("[CAMNAS] Shutting down Julia...\n");
     shutdown_julia(0);
 }
 
