@@ -175,7 +175,7 @@ function mna_solve(my_system_matrix, rhs)
 
     # Allow printing accelerator without debug statements
     (haskey(ENV, "PRINT_ACCELERATOR") && ENV["PRINT_ACCELERATOR"] == "true" ?
-        print(typeof(accelerator))
+        println(typeof(accelerator))
         : nothing)
     typeof(accelerator) == CUDAccelerator ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 

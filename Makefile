@@ -15,12 +15,13 @@ new: clean all
 clean:
 	rm -rf $(ROOT_DIR)/$(TARGET)
 	rm -f $(ROOT_DIR)/camnasjl.so
+	rm -f $(ROOT_DIR)/dpsim_wrapper.o
 
-camnasjl.so: CAMNAS/build/build.jl CAMNAS/src/CAMNAS.jl CAMNAS/src/mna_solver.jl CAMNAS/src/config.jl CAMNAS/build/precompile_statements.jl
-	$(JULIA) --project=CAMNAS --threads=auto --startup-file=no CAMNAS/build/build.jl $(TARGET)
+camnasjl.so: build/build.jl src/CAMNAS.jl src/mna_solver.jl src/config.jl build/precompile_statements.jl
+	$(JULIA) --project=. --threads=auto --startup-file=no build/build.jl $(TARGET)
 
 wrapper.o:
-	gcc -c -fPIC -O2 -I$(ROOT_DIR)/CAMNASCompiled/include -I$(ROOT_DIR)/../../../include dpsim_wrapper.c
+	gcc -c -fPIC -O2 -I$(ROOT_DIR)/CAMNASCompiled/include -I$(ROOT_DIR)/../../../include build/dpsim_wrapper.c
 
 plugin.so: wrapper.o
 	gcc -shared -o camnasjl.so dpsim_wrapper.o  -L$(ROOT_DIR)/CAMNASCompiled/lib -lcamnasjl
