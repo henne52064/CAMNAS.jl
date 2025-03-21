@@ -1,7 +1,7 @@
-using JuliaMNA, Test
+using CAMNAS, Test
 using Suppressor
 
-@testset "JuliaMNA" begin
+@testset "CAMNAS" begin
 
     # Read and convert test inputs
     sys_mat_str = readlines("system_matrix_small.txt")
@@ -50,5 +50,5 @@ using Suppressor
         # Restore system matrix values
         sys_mat.values = sys_mat_bak
     end        
-end # testset "JuliaMNA"
+end # testset "CAMNAS"
 
