@@ -47,3 +47,11 @@ Certain features and behavior patterns of the solver can be managed through envi
 |JL_MNA_FORCE_CPU|Boolean [false]|[CONTROL] *Currently unused...* |
 |JL_MNA_FORCE_GPU|Boolean [false]|[CONTROL] *Currently unused...*|
 |PRINT_ACCELERATOR| Boolean [false]| [DEBUG] Print currently used accelerator independent from debug statements.|
+
+
+## Development / Testing
+Developing or testing a shared library or plugin can be tideous, especially due to long compilations times. However, the purely Julia script `test/test_interface.jl` comes to your help!
+
+This script allows testing all externally accessible functions directly within Julia.
+
+To ensure compatibility with DPsim, three test case inputs of different sizes are provided. The specific input size can be adjusted using the `inputSize` variable at the beginning of the script. All inputs are designed to satisfy the equation `x = A \ b`, where `A` is a sparse matrix in CSR format and `b` is a vector.
