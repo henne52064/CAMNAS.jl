@@ -7,12 +7,13 @@ using FileWatching
 include("config.jl")
 
 # Hardwareawareness
-struct AbstractAccelerator end
-struct CUDAccelerator end
-struct DummyAccelerator end
+abstract type AbstractAccelerator end
+struct NoAccelerator <: AbstractAccelerator end
+struct CUDAccelerator <: AbstractAccelerator end
+struct DummyAccelerator <: AbstractAccelerator end
 
 system_environment = Channel(1)
-accelerator = AbstractAccelerator()
+accelerator = NoAccelerator()
 system_matrix = nothing
 
 
@@ -28,7 +29,7 @@ function find_accelerator()
         end
     elseif !@isdefined accelerator
         @info "[CAMNAS] No accelerator found."
-        accelerator = AbstractAccelerator()
+        accelerator = NoAccelerator()
     end
     return accelerator
 end
@@ -36,7 +37,7 @@ end
 function systemcheck()
     if hwAwarenessDisabled
         @info "[CAMNAS] Hardware awareness disabled... Using Fallback implementation"
-        return AbstractAccelerator()
+        return NoAccelerator()
     else
         return find_accelerator()
     end
@@ -99,10 +100,10 @@ function determine_accelerator()
         elseif varDict["allow_cpu"]
             typeof(accelerator) == DummyAccelerator || set_accelerator!(DummyAccelerator())
         else
-            typeof(accelerator) == AbstractAccelerator || set_accelerator!(AbstractAccelerator())
+            typeof(accelerator) == NoAccelerator || set_accelerator!(NoAccelerator())
         end
 
-        @info "[CAMNAS] Accelerator changed to: $(typeof(accelerator))"
+        @info "[CAMNAS] Currently used accelerator: $(typeof(accelerator))"
     end
     @debug "Accelerator determination stopped!"
 end
@@ -152,13 +153,15 @@ end
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
     matrix = CuSparseMatrixCSR(CuArray(sparse_mat)) # Sparse GPU implementation
     lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF)
-    @debug "GPU $lu_decomp"
     return lu_decomp
 end
 
 function mna_decomp(sparse_mat)
     set_csr_mat(sparse_mat)
-    return [mna_decomp(sparse_mat, AbstractAccelerator()), mna_decomp(sparse_mat, CUDAccelerator())]
+    if varDict["fast_switch"]
+        return [mna_decomp(sparse_mat, NoAccelerator()), mna_decomp(sparse_mat, CUDAccelerator())]
+    end
+    return [mna_decomp(sparse_mat, accelerator), nothing]
 end
 
 function mna_solve(system_matrix, rhs, accelerator::AbstractAccelerator)
@@ -177,8 +180,8 @@ function mna_solve(my_system_matrix, rhs)
     (haskey(ENV, "PRINT_ACCELERATOR") && ENV["PRINT_ACCELERATOR"] == "true" ?
         println(typeof(accelerator))
         : nothing)
-    typeof(accelerator) == CUDAccelerator ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
+    (typeof(accelerator) == CUDAccelerator && varDict["fast_switch"]) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 
     return mna_solve(sys_mat, rhs, accelerator)
 end
-mna_solve(system_matrix, rhs, accelerator::DummyAccelerator) = mna_solve(system_matrix, rhs, AbstractAccelerator())
+mna_solve(system_matrix, rhs, accelerator::DummyAccelerator) = mna_solve(system_matrix, rhs, NoAccelerator())

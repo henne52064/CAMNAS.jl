@@ -43,4 +43,6 @@ end
 @var allow_cpu = env("JL_MNA_ALLOW_CPU", true)
 (!allow_cpu && !allow_gpu) && error("Cannot forbid CPU and GPU at the same time.")
 
+@var fast_switch = env("JL_MNA_FAST_SWITCH", true)
+
 create_env_file()
