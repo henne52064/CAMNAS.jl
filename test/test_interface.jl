@@ -1,10 +1,11 @@
-##############################################################
-## Use this varibale to define the size of the input files ##
-##############################################################
-const inputSize = "small" # small, medium, big
-##############################################################
 
 begin # Initialization
+    ##############################################################
+    ## Use this varibale to define the size of the input files ##
+    ##############################################################
+    const inputSize = "small" # small, medium, big
+    ##############################################################
+
     @assert inputSize in ["small", "medium", "big"]
     ENV["JULIA_DEBUG"] = "CAMNAS" # Enable debug output
     push!(LOAD_PATH, pwd())
@@ -52,17 +53,9 @@ begin # Initialization
     end
 
     GC.enable(false) # We cannot be sure that system_matrix is garbage collected before the pointer is passed...
-    # system_matrix = read_input(ArrayPath("$(@__DIR__)/system_matrix_small.txt"))
-    # system_matrix = read_input(ArrayPath("$(@__DIR__)/system_matrix.txt"))
     system_matrix = read_input(ArrayPath("$(@__DIR__)/system_matrix_$inputSize.txt"))
     system_matrix_ptr = pointer_from_objref(system_matrix)
-
-
-    # rhs_vector = read_input(VectorPath("$(@__DIR__)/rhs_small.txt"))
-    # rhs_vector = read_input(VectorPath("$(@__DIR__)/rhs.txt"))
     rhs_vector = read_input(VectorPath("$(@__DIR__)/rhs_$inputSize.txt"))
-    # rhs_vector = read_input(VectorPath("test/rhs_small.txt"))
-
     lhs_vector = zeros(Float64, length(rhs_vector))
     rhs_reset = ones(Float64, length(rhs_vector))
 
