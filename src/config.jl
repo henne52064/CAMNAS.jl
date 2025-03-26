@@ -1,6 +1,5 @@
-export hwAwarenessDisabled
-export allow_cpu, allow_gpu
-export varDict
+export create_env_file
+export parse_env_vars
 
 function env(env_var, default)
     if haskey(ENV, env_var)
@@ -10,15 +9,6 @@ function env(env_var, default)
         @info env_var * " not set. Using default value: " * string(default)
         default
     end
-end
-
-varDict = Dict()
-# Macro called @var that adds a variable defintion of type x = y to the varDict dictionary
-macro var(ex)
-    lhs = ex.args[1]
-    rhs = eval(ex.args[2])
-    varDict[String(lhs)] = rhs
-    eval(:($lhs = $rhs))
 end
 
 function create_env_file()
@@ -33,16 +23,20 @@ function create_env_file()
     end
 end
 
-@var hwAwarenessDisabled = env("JL_MNA_DISABLE_AWARENESS", false)
+function parse_env_vars()
+    varDict = Dict()
 
-@var force_gpu = env("JL_MNA_FORCE_GPU", false)
-@var force_cpu = env("JL_MNA_FORCE_CPU", false)
-(force_cpu && force_gpu) && error("Cannot force CPU and GPU at the same time.")
+    varDict["hwAwarenessDisabled"] = env("JL_MNA_DISABLE_AWARENESS", false)
 
-@var allow_gpu = env("JL_MNA_ALLOW_GPU", true)
-@var allow_cpu = env("JL_MNA_ALLOW_CPU", true)
-(!allow_cpu && !allow_gpu) && error("Cannot forbid CPU and GPU at the same time.")
+    varDict["force_gpu"] = env("JL_MNA_FORCE_GPU", false)
+    varDict["force_cpu"] = env("JL_MNA_FORCE_CPU", false)
+    (varDict["force_gpu"] && varDict["force_cpu"]) && error("Cannot force CPU and GPU at the same time.")
 
-@var fast_switch = env("JL_MNA_FAST_SWITCH", true)
+    varDict["allow_gpu"] = env("JL_MNA_ALLOW_GPU", true)
+    varDict["allow_cpu"] = env("JL_MNA_ALLOW_CPU", true)
+    (!varDict["allow_gpu"] && !varDict["allow_cpu"]) && error("Cannot forbid CPU and GPU at the same time.")
 
-create_env_file()
+    varDict["fast_switch"] = env("JL_MNA_FAST_SWITCH", true)
+
+    return varDict
+end

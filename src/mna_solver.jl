@@ -18,7 +18,7 @@ system_matrix = nothing
 
 
 function find_accelerator()
-    if allow_gpu && has_cuda()
+    if varDict["allow_gpu"] && has_cuda()
         @debug "CUDA available! Try using CUDA accelerator..."
         try
             CuArray(ones(1))
@@ -35,7 +35,7 @@ function find_accelerator()
 end
 
 function systemcheck()
-    if hwAwarenessDisabled
+    if varDict["hwAwarenessDisabled"]
         @info "[CAMNAS] Hardware awareness disabled... Using Fallback implementation"
         return NoAccelerator()
     else
@@ -115,6 +115,9 @@ end
 
 # Housekeeping
 function mna_init(sparse_mat)
+    global varDict = parse_env_vars()
+    create_env_file()
+
     global accelerator = systemcheck()
     global run = true
     global csr_mat = sparse_mat
