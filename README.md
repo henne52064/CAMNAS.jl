@@ -13,7 +13,7 @@ Its key features include:
 ```
 git clone https://github.com/RWTH-ACS/CAMNAS.jl.git
 cd CAMNAS.jl
-julia --project=$(pwd) --eval="using Pkgs;Pkg.instantiate()"
+julia --project=$(pwd) --eval="using Pkg;Pkg.instantiate()"
 make
 ```
 
