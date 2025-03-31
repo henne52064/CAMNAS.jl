@@ -36,7 +36,7 @@ function parse_env_vars()
     varDict["allow_cpu"] = env("JL_MNA_ALLOW_CPU", true)
     (!varDict["allow_gpu"] && !varDict["allow_cpu"]) && error("Cannot forbid CPU and GPU at the same time.")
 
-    varDict["fast_switch"] = env("JL_MNA_FAST_SWITCH", true)
+    varDict["fast_switch"] = env("JL_MNA_FAST_SWITCH", false)
 
     return varDict
 end
