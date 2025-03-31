@@ -37,7 +37,7 @@ To allow CAMNAS and DPsim to dynamically link the necessary libraries, ensure th
 For more information on the interaction of DPsim and the Plugin, see [DPsim's MNASolverPlugin.cpp](https://github.com/sogno-platform/dpsim/blob/master/dpsim/src/MNASolverPlugin.cpp).
 
 ### Environment Variables
-Certain features and behavior patterns of the solver can be managed through environment variables. For details, refer to the following:
+Certain features and behavior patterns of the solver can be managed through environment variables during the initialization of the plugin. For details, refer to the following:
 
 | Variable | Values [default] | [TYPE] Description | 
 | :--: | :--: | :-- |
@@ -47,6 +47,9 @@ Certain features and behavior patterns of the solver can be managed through envi
 |JL_MNA_FORCE_CPU|Boolean [false]|[CONTROL] *Currently unused...* |
 |JL_MNA_FORCE_GPU|Boolean [false]|[CONTROL] *Currently unused...*|
 |PRINT_ACCELERATOR| Boolean [false]| [DEBUG] Print currently used accelerator independent from debug statements.|
+
+> [!Warning]
+> To modify the plugin's behavior interactively during runtime (e.g., dynamically switching accelerators between timesteps), users can edit the automatically generated `system.env` file. However, this feature is still experimental and therefore not recommended.
 
 
 ## Development / Testing
