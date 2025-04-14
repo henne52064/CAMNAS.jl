@@ -161,10 +161,13 @@ end
 
 function mna_decomp(sparse_mat)
     set_csr_mat(sparse_mat)
-    if varDict["fast_switch"]
+    if varDict["runtime_switch"]
         return [mna_decomp(sparse_mat, NoAccelerator()), mna_decomp(sparse_mat, CUDAccelerator())]
+    elseif accelerator == CUDAccelerator()
+        return [nothing, mna_decomp(sparse_mat, accelerator)]
+    else
+        return [mna_decomp(sparse_mat, accelerator), nothing]
     end
-    return [mna_decomp(sparse_mat, accelerator), nothing]
 end
 
 function mna_solve(system_matrix, rhs, accelerator::AbstractAccelerator)
@@ -180,10 +183,10 @@ end
 function mna_solve(my_system_matrix, rhs)
 
     # Allow printing accelerator without debug statements
-    (haskey(ENV, "PRINT_ACCELERATOR") && ENV["PRINT_ACCELERATOR"] == "true" ?
+    (haskey(ENV, "JL_MNA_PRINT_ACCELERATOR") && ENV["JL_MNA_PRINT_ACCELERATOR"] == "true" ?
         println(typeof(accelerator))
         : nothing)
-    (typeof(accelerator) == CUDAccelerator && varDict["fast_switch"]) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
+    (typeof(accelerator) == CUDAccelerator) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 
     return mna_solve(sys_mat, rhs, accelerator)
 end

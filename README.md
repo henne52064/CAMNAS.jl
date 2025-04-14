@@ -46,10 +46,10 @@ Certain features and behavior patterns of the solver can be managed through envi
 |JL_MNA_ALLOW_GPU|Boolean [true]|[CONTROL] Allow accelerator selection to use CPU. |
 |JL_MNA_FORCE_CPU|Boolean [false]|[CONTROL] *Currently unused...* |
 |JL_MNA_FORCE_GPU|Boolean [false]|[CONTROL] *Currently unused...*|
-|PRINT_ACCELERATOR| Boolean [false]| [DEBUG] Print currently used accelerator independent from debug statements.|
+|JL_MNA_PRINT_ACCELERATOR| Boolean [false]| [DEBUG] Print currently used accelerator independent from debug statements.|
 
 > [!Warning]
-> To modify the plugin's behavior interactively during runtime (e.g., dynamically switching accelerators between timesteps), users can edit the automatically generated `system.env` file. However, this feature is still experimental and therefore not recommended.
+> To modify the plugin's behavior interactively during runtime (e.g., dynamically switching accelerators between timesteps), users can edit the automatically generated `system.env` file. However, this feature is still experimental and therefore not recommended and requires to set the optional ENV variable `JL_MNA_RUNTIME_SWITCH` before loading CAMNAS.
 
 
 ## Development / Testing

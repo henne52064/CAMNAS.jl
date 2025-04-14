@@ -8,6 +8,8 @@ begin # Initialization
 
     @assert inputSize in ["small", "medium", "big"]
     ENV["JULIA_DEBUG"] = "CAMNAS" # Enable debug output
+    # ENV["JL_MNA_RUNTIME_SWITCH"] = "true" # Enable runtime switch
+    # ENV["JL_MNA_PRINT_ACCELERATOR"] = "true" # Enable printing accelerator in each solve steps
     push!(LOAD_PATH, pwd())
     @info LOAD_PATH
     using Pkg
