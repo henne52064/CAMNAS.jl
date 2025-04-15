@@ -95,7 +95,12 @@ function determine_accelerator()
         val === nothing ? break : nothing
 
         # Currently, we implement a GPU-favoring approach
-        if varDict["allow_gpu"] && has_cuda()
+        if varDict["force_cpu"] && varDict["force_gpu"]
+            @debug "Conflict: Both 'force_cpu' and 'force_gpu' are set. Only one can be forced."
+            typeof(accelerator) == NoAccelerator || set_accelerator!(NoAccelerator())
+        elseif varDict["allow_cpu"] && varDict["force_cpu"]
+            typeof(accelerator) == DummyAccelerator || set_accelerator!(DummyAccelerator())
+        elseif varDict["allow_gpu"] && has_cuda() 
             typeof(accelerator) == CUDAccelerator || set_accelerator!(CUDAccelerator())
         elseif varDict["allow_cpu"]
             typeof(accelerator) == DummyAccelerator || set_accelerator!(DummyAccelerator())
