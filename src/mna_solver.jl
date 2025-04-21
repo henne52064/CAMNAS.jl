@@ -3,6 +3,7 @@ using CUDA.CUSPARSE
 using CUSOLVERRF
 using LinearAlgebra
 using FileWatching
+using TOML
 
 include("config.jl")
 
@@ -12,10 +13,41 @@ struct NoAccelerator <: AbstractAccelerator end
 struct CUDAccelerator <: AbstractAccelerator end
 struct DummyAccelerator <: AbstractAccelerator end
 
+struct AcceleratorProperties
+    availability::Bool
+    priority::Int64
+    flops::Float64
+    memory_gb::Float64
+    memory_bandwith_gbps::Float64
+    stability_rating::Float64       # 0.0-1.0
+    power_watts::Float64            # max Power usage
+    energy_efficiency::Float64      # flops/W
+end
+
+acceleratorPropertiesDict = Dict()
+
 system_environment = Channel(1)
 accelerator = NoAccelerator()
 system_matrix = nothing
 
+function load_accelerator_properties()
+    @debug "Reading accelerators.toml"
+    content = TOML.parsefile("test/accelerators.toml")
+
+    for (name, data) in content
+        global acceleratorPropertiesDict["$name"] = AcceleratorProperties(
+            data["available"],
+            1,
+            data["flops"],
+            data["memory_gb"],
+            data["memory_bandwidth_gbps"],
+            data["stability_rating"],
+            data["power_watts"],
+            data["energy_efficiency"]
+        )
+    end 
+    @debug "Stored properties for all accelerators:\n$(join(["$name => $(acceleratorPropertiesDict[name])" for name in keys(acceleratorPropertiesDict)], "\n"))"
+end
 
 function find_accelerator()
     if varDict["allow_gpu"] && has_cuda()
@@ -122,6 +154,7 @@ end
 function mna_init(sparse_mat)
     global varDict = parse_env_vars()
     create_env_file()
+    load_accelerator_properties()
 
     global accelerator = systemcheck()
     global run = true
@@ -161,6 +194,10 @@ end
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
     matrix = CuSparseMatrixCSR(CuArray(sparse_mat)) # Sparse GPU implementation
     lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF)
+    # @debug "Befor Transfer"
+    # lu_decomp_cpu = mna_transfer(lu_decomp)
+    # @debug "Transfer worked: $lu_decomp_cpu"
+
     return lu_decomp
 end
 
@@ -174,6 +211,18 @@ function mna_decomp(sparse_mat)
         return [mna_decomp(sparse_mat, accelerator), nothing]
     end
 end
+
+# function mna_transfer(lu_decomp)
+#     if typeof(lu_decomp) == CUSOLVERRF.RFLU
+#          lu_decomp_cpu = lu_decomp.M
+#          return lu_decomp_cpu
+#     end
+    
+# end
+
+# function mna_transfer(decomposition)
+
+# end
 
 function mna_solve(system_matrix, rhs, accelerator::AbstractAccelerator)
     return system_matrix \ rhs
