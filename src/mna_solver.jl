@@ -24,11 +24,33 @@ struct AcceleratorProperties
     energy_efficiency::Float64      # flops/W
 end
 
+# Accelerator Selection
+abstract type AbstractSelectionStrategy end
+
+struct DefaultStrategy <: AbstractSelectionStrategy end #choose first accelerator from a defined order
+struct LowestPowerStrategy <: AbstractSelectionStrategy end
+struct HighestFlopsStragey <: AbstractSelectionStrategy end
+
 acceleratorPropertiesDict = Dict()
+
+# LU Struct
+abstract type AbstractLUdecomp end
+
+struct CUDA_LUdecomp <: AbstractLUdecomp 
+    lu_decomp::CUSOLVERRF.RFLU
+end
+struct CPU_LUdecomp <: AbstractLUdecomp 
+    lu_decomp::LinearAlgebra.TransposeFactorization
+end
+struct DummyLUdecomp <: AbstractLUdecomp
+end
+
 
 system_environment = Channel(1)
 accelerator = NoAccelerator()
-system_matrix = nothing
+#system_matrix = nothing
+#system_matrix = Vector{Any}(undef,2)
+system_matrix = Vector{AbstractLUdecomp}(undef,2)   
 
 function load_accelerator_properties()
     @debug "Reading accelerators.toml"
@@ -48,6 +70,31 @@ function load_accelerator_properties()
     end 
     @debug "Stored properties for all accelerators:\n$(join(["$name => $(acceleratorPropertiesDict[name])" for name in keys(acceleratorPropertiesDict)], "\n"))"
 end
+
+function select_accelerator(strategy::AbstractSelectionStrategy, accelerators::Dict{String, AcceleratorProperties})
+        @debug "Strategy not implemented, falling back to DefaultStrategy"
+        select_accelerator(DefaultStrategy(), accelerators)
+end
+
+function select_accelerator(strategy::DefaultStrategy, accelerators::Dict{String, AcceleratorProperties})
+    # sort vector of accelerators to a specific order and then choose the first available
+
+    if accelerator == CUDAccelerator() && has_cuda()
+       
+    end
+
+    
+end
+
+function select_accelerator(strategy::LowestPowerStrategy, accelerators::Dict{String, AcceleratorProperties})
+    
+end
+
+function select_accelerator(strategy::HighestFlopsStragey, accelerators::Dict{String, AcceleratorProperties})
+    
+end
+
+
 
 function find_accelerator()
     if varDict["allow_gpu"] && has_cuda()
@@ -180,20 +227,20 @@ function set_csr_mat(csr_matrix)
 end
 
 function mna_decomp(sparse_mat, accelerator::AbstractAccelerator)
-    lu_decomp = SparseArrays.lu(sparse_mat)
+    lu_decomp = SparseArrays.lu(sparse_mat) |> CPU_LUdecomp
     @debug "CPU $lu_decomp"
     return lu_decomp
 end
 
 function mna_decomp(sparse_mat, accelerator::DummyAccelerator)
-    lu_decomp = SparseArrays.lu(sparse_mat)
+    lu_decomp = SparseArrays.lu(sparse_mat) |> CPU_LUdecomp
     @debug "Dummy"
     return lu_decomp
 end
 
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
     matrix = CuSparseMatrixCSR(CuArray(sparse_mat)) # Sparse GPU implementation
-    lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF)
+    lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF) |> CUDA_LUdecomp
     # @debug "Befor Transfer"
     # lu_decomp_cpu = mna_transfer(lu_decomp)
     # @debug "Transfer worked: $lu_decomp_cpu"
@@ -206,31 +253,23 @@ function mna_decomp(sparse_mat)
     if varDict["runtime_switch"]
         return [mna_decomp(sparse_mat, NoAccelerator()), mna_decomp(sparse_mat, CUDAccelerator())]
     elseif accelerator == CUDAccelerator()
-        return [nothing, mna_decomp(sparse_mat, accelerator)]
+        return [DummyLUdecomp(), mna_decomp(sparse_mat, accelerator)]
+        #sys_mat = Vector{AbstractLUdecomp}(DummyLUdecomp(), mna_decomp(sparse_mat, accelerator))
+        #return sys_mat
+        #return [missing, mna_decomp(sparse_mat, accelerator)]
     else
-        return [mna_decomp(sparse_mat, accelerator), nothing]
+        return [mna_decomp(sparse_mat, accelerator), missing]
     end
 end
 
-# function mna_transfer(lu_decomp)
-#     if typeof(lu_decomp) == CUSOLVERRF.RFLU
-#          lu_decomp_cpu = lu_decomp.M
-#          return lu_decomp_cpu
-#     end
-    
-# end
-
-# function mna_transfer(decomposition)
-
-# end
 
 function mna_solve(system_matrix, rhs, accelerator::AbstractAccelerator)
-    return system_matrix \ rhs
+    return system_matrix.lu_decomp \ rhs
 end
 
 function mna_solve(system_matrix, rhs, accelerator::CUDAccelerator)
     rhs_d = CuVector(rhs)
-    ldiv!(system_matrix, rhs_d)
+    ldiv!(system_matrix.lu_decomp, rhs_d)
     return Array(rhs_d)
 end
 
@@ -245,3 +284,35 @@ function mna_solve(my_system_matrix, rhs)
     return mna_solve(sys_mat, rhs, accelerator)
 end
 mna_solve(system_matrix, rhs, accelerator::DummyAccelerator) = mna_solve(system_matrix, rhs, NoAccelerator())
+
+function transfer_LU_CUDA2CPU(cuda_lu::CUDA_LUdecomp) #transfer LU factorization from CUSOLVERRF.RFLU to SparseArrays.UMFPACK.UMFPACKLU type
+    # Access combined LU matrix (GPU, CSR format)
+    M_gpu = cuda_lu.lu_decomp.M    # M = L + U
+    
+    rowPtr = collect(M_gpu.rowPtr)
+    colVal = collect(M_gpu.colVal)
+    nzVal = collect(M_gpu.nzVal)
+
+    nrow = size(M_gpu, 1)
+    ncol = size(M_gpu, 2)
+
+    # Construct CPU-side sparse matrix in CSR format
+    M_cpu = SparseMatrixCSR{1}(nrow, ncol, rowPtr, colVal, nzVal)   # 1 indicates index base
+    cpu_lu_decomp = SparseArrays.lu(M_cpu) |> CPU_LUdecomp
+    #cpu_lu_decomp = CPU_LUdecomp(M_cpu)
+    @debug "Type of lu_decomp is $(typeof(lu_decomp))"
+    return cpu_lu_decomp
+end
+
+# function transfer_LU_CUDA2CPU(rf::CUSOLVERRF.RFLU) #transfer LU factorization from CUSOLVERRF.RFLU to SparseArrays.UMFPACK.UMFPACKLU type
+#     # Access combined LU matrix (GPU, CSR format)
+#     M_gpu = rf.M    # M = L + U
+    
+#     # Transfer to CPU
+#     @debug "typeof collect(M_gpu): $(typeof(collect(M_gpu)))"
+#     M_cpu = SparseMatrixCSR(collect(M_gpu))  # -> added SparseMatricesCSR.jl, otherwise in CSC Format
+#     @debug "Type of M_gpu is $(typeof(M_gpu)), typeof M_cpu is $(typeof(M_cpu))"
+#     lu_decomp = SparseArrays.lu(M_cpu)
+#     @debug "Type of lu_decomp is $(typeof(lu_decomp))"
+#     return lu_decomp
+# end
