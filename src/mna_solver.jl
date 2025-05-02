@@ -29,7 +29,7 @@ abstract type AbstractSelectionStrategy end
 
 struct DefaultStrategy <: AbstractSelectionStrategy end #choose first accelerator from a defined order
 struct LowestPowerStrategy <: AbstractSelectionStrategy end
-struct HighestFlopsStragey <: AbstractSelectionStrategy end
+struct HighestFlopsStrategey <: AbstractSelectionStrategy end
 
 acceleratorPropertiesDict = Dict()
 
@@ -59,7 +59,7 @@ function load_accelerator_properties()
     for (name, data) in content
         global acceleratorPropertiesDict["$name"] = AcceleratorProperties(
             data["available"],
-            1,
+            data["priority"],
             data["flops"],
             data["memory_gb"],
             data["memory_bandwidth_gbps"],
@@ -90,7 +90,7 @@ function select_accelerator(strategy::LowestPowerStrategy, accelerators::Dict{St
     
 end
 
-function select_accelerator(strategy::HighestFlopsStragey, accelerators::Dict{String, AcceleratorProperties})
+function select_accelerator(strategy::HighestFlopsStrategey, accelerators::Dict{String, AcceleratorProperties})
     
 end
 
