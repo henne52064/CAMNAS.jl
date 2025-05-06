@@ -49,8 +49,7 @@ Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     mna_init(sparse_mat)
 
     lu_mat = mna_decomp(sparse_mat)
-    @debug lu_mat
-    @debug typeof(lu_mat)
+    @debug "Current LU factorization: $lu_mat"
     global system_matrix = lu_mat
 
     return 0

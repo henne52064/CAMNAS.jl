@@ -122,8 +122,9 @@ function load_accelerator_properties()
 end
 
 function select_accelerator(strategy::AbstractSelectionStrategy, accelerators::Vector{AbstractAccelerator})
-        @debug "Strategy not implemented, falling back to DefaultStrategy"
-        select_accelerator(DefaultStrategy(), accelerators)
+    global accelerators
+    @debug "Strategy not implemented, falling back to DefaultStrategy"
+    select_accelerator(DefaultStrategy(), accelerators)
 end
 
 function select_accelerator(strategy::DefaultStrategy, accelerators::Vector{AbstractAccelerator})
@@ -133,6 +134,7 @@ function select_accelerator(strategy::DefaultStrategy, accelerators::Vector{Abst
 end
 
 function select_accelerator(strategy::LowestPowerStrategy, accelerators::Vector{AbstractAccelerator})
+    global accelerators
     available = filter(x -> x.properties.availability, accelerators)
     value, index = findmin(x -> x.properties.power_watts, available)
     accelerator = available[index]
@@ -141,6 +143,7 @@ function select_accelerator(strategy::LowestPowerStrategy, accelerators::Vector{
 end
 
 function select_accelerator(strategy::HighestFlopsStrategey, accelerators::Vector{AbstractAccelerator})
+    global accelerators
     available = filter(x -> x.properties.availability, accelerators)
     value, index = findmax(x -> x.properties.flops, available)
     accelerator = available[index]
@@ -238,7 +241,7 @@ function get_cores_per_sm(cc::VersionNumber)
 end
 
 function setup_accelerators()
-
+    global accelerators
     cpu_flops = estimate_cpu_flops()
     cpu = NoAccelerator("cpu", properties = AcceleratorProperties(true, 1, cpu_flops, 95)) # not a direct way from Julia to get CPU TDP
     push!(accelerators, cpu)
@@ -271,6 +274,7 @@ function setup_accelerators()
 end
 
 function find_accelerator()
+    global accelerators
     @debug "Present accelerators: $([a.name for a in accelerators])"
     if varDict["allow_gpu"] && has_cuda()
         @debug "CUDA available! Try using CUDA accelerator..."
@@ -285,6 +289,7 @@ function find_accelerator()
         @info "[CAMNAS] No accelerator found."
         accelerator = NoAccelerator()
     end
+    @debug "Accelerator type is $(typeof(accelerators))"
     accelerator = select_accelerator(HighestFlopsStrategey(), accelerators)
     @debug "Lowest power consumption with $accelerator as accelerator"
     return accelerator
@@ -387,7 +392,7 @@ function mna_init(sparse_mat)
     #load_accelerator_properties()
 
     global accelerator = systemcheck()
-    global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]
+    #global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]
     @debug accelerators
     global run = true
     global csr_mat = sparse_mat
