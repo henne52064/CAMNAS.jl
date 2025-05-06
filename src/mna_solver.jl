@@ -7,22 +7,72 @@ using TOML
 
 include("config.jl")
 
+
 # Hardwareawareness
 abstract type AbstractAccelerator end
-struct NoAccelerator <: AbstractAccelerator end
-struct CUDAccelerator <: AbstractAccelerator end
-struct DummyAccelerator <: AbstractAccelerator end
 
 struct AcceleratorProperties
     availability::Bool
     priority::Int64
-    flops::Float64
-    memory_gb::Float64
-    memory_bandwith_gbps::Float64
-    stability_rating::Float64       # 0.0-1.0
-    power_watts::Float64            # max Power usage
+    flops::Float64      # in GFLOPs
+    #memory_gb::Float64
+    #memory_bandwith_gbps::Float64
+    #stability_rating::Float64       # 0.0-1.0
+    power_watts::Int64            # max Power usage
     energy_efficiency::Float64      # flops/W
+
+    function AcceleratorProperties(availability::Bool, priority::Int64, flops::Float64, power_watts::Int64) 
+        new(availability, priority, flops, power_watts, round(flops/power_watts, digits=4))
+    end
+
+    function AcceleratorProperties()
+        new(true, 1, 1.0, 1, 1.0)
+    end
+
 end
+
+struct NoAccelerator <: AbstractAccelerator 
+    name::String
+    properties::AcceleratorProperties
+    
+
+    function NoAccelerator(name::String; properties=AcceleratorProperties(true, 1, 1.0, 1))
+        new(name, properties)
+    end
+
+    
+    function NoAccelerator()
+        new("cpu", AcceleratorProperties(true, 1, 1.0, 1))
+    end
+
+end
+struct CUDAccelerator <: AbstractAccelerator 
+    name::String
+    properties::AcceleratorProperties
+
+    function CUDAccelerator(name::String; properties=AcceleratorProperties(true, 1, 1.0, 1))
+        new(name, properties)
+    end
+
+    function CUDAccelerator()
+        new("cuda", AcceleratorProperties(true, 1, 1.0, 1))
+    end
+
+end
+struct DummyAccelerator <: AbstractAccelerator
+    name::String
+    properties::AcceleratorProperties
+
+    function DummyAccelerator(name::String; properties=AcceleratorProperties(true, 1, 1.0, 1))
+        new(name, properties)
+    end
+
+    function DummyAccelerator()
+        new("", AcceleratorProperties(true, 1, 1.0, 1))
+    end
+
+end
+
 
 # Accelerator Selection
 abstract type AbstractSelectionStrategy end
@@ -45,7 +95,8 @@ end
 struct DummyLUdecomp <: AbstractLUdecomp
 end
 
-
+# Vector of available accelerators
+global accelerators = Vector{AbstractAccelerator}()
 system_environment = Channel(1)
 accelerator = NoAccelerator()
 #system_matrix = nothing
@@ -61,42 +112,161 @@ function load_accelerator_properties()
             data["available"],
             data["priority"],
             data["flops"],
-            data["memory_gb"],
-            data["memory_bandwidth_gbps"],
-            data["stability_rating"],
-            data["power_watts"],
-            data["energy_efficiency"]
+            #data["memory_gb"],
+            #data["memory_bandwidth_gbps"],
+            #data["stability_rating"],
+            data["power_watts"]
         )
     end 
     @debug "Stored properties for all accelerators:\n$(join(["$name => $(acceleratorPropertiesDict[name])" for name in keys(acceleratorPropertiesDict)], "\n"))"
 end
 
-function select_accelerator(strategy::AbstractSelectionStrategy, accelerators::Dict{String, AcceleratorProperties})
+function select_accelerator(strategy::AbstractSelectionStrategy, accelerators::Vector{AbstractAccelerator})
         @debug "Strategy not implemented, falling back to DefaultStrategy"
         select_accelerator(DefaultStrategy(), accelerators)
 end
 
-function select_accelerator(strategy::DefaultStrategy, accelerators::Dict{String, AcceleratorProperties})
+function select_accelerator(strategy::DefaultStrategy, accelerators::Vector{AbstractAccelerator})
     # sort vector of accelerators to a specific order and then choose the first available
 
-    if accelerator == CUDAccelerator() && has_cuda()
-       
+    
+end
+
+function select_accelerator(strategy::LowestPowerStrategy, accelerators::Vector{AbstractAccelerator})
+
+
+
+end
+
+function select_accelerator(strategy::HighestFlopsStrategey, accelerators::Vector{AbstractAccelerator})
+
+end
+
+
+
+
+
+function estimate_cpu_flops(; float_bits::Int = 64)     # returns flops in GFLOPs
+    # run lscpu and collect lines
+    output = read(`lscpu`, String)
+    lines = split(output, '\n')
+
+    function get_field(key)
+        for line in lines
+            if startswith(line, key)
+                return strip(split(line, ':')[2])
+            end
+        end
+        return ""
     end
 
-    
+    # get required fields
+    cores_per_socket = parse(Int, get_field("Core(s) per socket"))
+    sockets = parse(Int, get_field("Socket(s)"))
+    max_mhz = try
+        parse(Float64, get_field("CPU max MHz"))
+    catch
+        # if max not available
+        parse(Float64, get_field("CPU MHz"))
+    end
+    flags = split(get_field("Flags"))
+
+    # Determine SIMD width in bits
+    simd_bits = if "avx512f" in flags
+        512
+    elseif "avx2" in flags || ("avx" in flags && "fma" in flags)
+        256
+    elseif "sse2" in flags || "sse" in flags
+        128
+    else
+        64  # fallback guess
+    end
+
+    # estimate FLOPs per cycle per core
+    floats_per_vector = simd_bits / float_bits
+    flops_per_cycle_per_core = floats_per_vector * 2  # 1 FMA = 2 FLOPs
+
+    total_cores = cores_per_socket * sockets
+    clock_hz = max_mhz * 1e6
+
+
+    flops = total_cores * clock_hz * flops_per_cycle_per_core
+
+    #println("Estimated FP64 peak: $(round(flops / 1e9, digits=2)) GFLOPs")
+
+    return round(flops / 1e9, digits=2)
 end
 
-function select_accelerator(strategy::LowestPowerStrategy, accelerators::Dict{String, AcceleratorProperties})
-    
+function estimate_cuda_fp64_flops(dev::CUDA.CuDevice = CUDA.device())   # returns flops in GFLOPs
+
+    n_sms = CUDA.attribute(dev, CUDA.DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT)
+    clock_hz = CUDA.attribute(dev, CUDA.DEVICE_ATTRIBUTE_CLOCK_RATE) * 1000 # in kHz
+
+    cc = CUDA.capability(dev)
+    cores_per_sm = get_cores_per_sm(cc)
+
+    # compute theoretical FLOPs
+    total_cores = n_sms * cores_per_sm
+    flops = 2.0 * total_cores * clock_hz
+
+    # println("Device: ", CUDA.name(dev))
+    # println("Compute Capability: ", cc)
+    # println("SMs: $n_sms, Cores/SM: $cores_per_sm, Total Cores: $total_cores")
+    # println("Clock: $(clock_hz / 1e6) MHz")
+    # println("Estimated FP64 peak: $(round(flops / 1e9, digits=2)) GFLOPs")
+
+    return round(flops / 1e9, digits=2)
 end
 
-function select_accelerator(strategy::HighestFlopsStrategey, accelerators::Dict{String, AcceleratorProperties})
-    
+function get_cores_per_sm(cc::VersionNumber)
+    # Add lookup cores per sm, check with 'CUDA.capability( 'your_CUDA_device'  )' for capability
+    # and then in doc for num for 64FP cores
+    # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities and
+    # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#arithmetic-instructions
+    if cc == v"6.1" return 4  # Tesla P40
+    elseif cc == v"7.5" return 32   # Tesla T4
+    elseif cc == v"8.6" return 32 # NVIDIA A2
+    else
+        @warn "Unknown compute capability $cc; assuming 2 cores/SM"
+        return 2
+    end
 end
 
+function setup_accelerators()
 
+    cpu_flops = estimate_cpu_flops()
+    cpu = NoAccelerator("cpu", properties = AcceleratorProperties(true, 1, cpu_flops, 95)) # not a direct way from Julia to get CPU TDP
+    push!(accelerators, cpu)
+
+    
+    gpu_flops = estimate_cuda_fp64_flops(CuDevice(0))
+    gpu_p40 = CUDAccelerator("P40", properties = AcceleratorProperties(true, 1, gpu_flops, 250))
+    push!(accelerators, gpu_p40)
+
+    gpu_flops = estimate_cuda_fp64_flops(CuDevice(1))
+    gpu_t4 = CUDAccelerator("T4", properties = AcceleratorProperties(true, 1, gpu_flops, 70))
+    push!(accelerators, gpu_t4)
+
+    gpu_flops = estimate_cuda_fp64_flops(CuDevice(2))
+    gpu_a2 = CUDAccelerator("A2", properties = AcceleratorProperties(true, 1, gpu_flops, 60))
+    push!(accelerators, gpu_a2)
+
+    gpu_flops = estimate_cuda_fp64_flops(CuDevice(3))
+    gpu_p40_2 = CUDAccelerator("P40_2", properties = AcceleratorProperties(true, 1, gpu_flops, 250))
+    push!(accelerators, gpu_p40_2)
+
+
+    # Since powerconsumption not readable from system info, might add later with NVML
+    # for dev in CUDA.devices()
+    #     gpu_flops = estimate_cuda_fp64_flops(dev)
+    #     gpu = CUDAccelerator(properties = AcceleratorProperties(true, 1, gpu_flops, 70))
+    #     push!(gpu)
+
+
+end
 
 function find_accelerator()
+    @debug "Present accelerators: $([a.name for a in accelerators])"
     if varDict["allow_gpu"] && has_cuda()
         @debug "CUDA available! Try using CUDA accelerator..."
         try
@@ -110,8 +280,11 @@ function find_accelerator()
         @info "[CAMNAS] No accelerator found."
         accelerator = NoAccelerator()
     end
+    #accelerator = select_accelerator(HighestFlopsStrategey(), accelerators)
+    @debug "Lowest power consumption with $accelerator as accelerator"
     return accelerator
 end
+
 
 function systemcheck()
     if varDict["hwAwarenessDisabled"]
@@ -188,6 +361,10 @@ function determine_accelerator()
         end
 
         @info "[CAMNAS] Currently used accelerator: $(typeof(accelerator))"
+        if typeof(accelerator) == CUDAccelerator 
+            index = CUDA.device().handle
+            @debug "Current CUDA accelerator: $(CUDA.name(CuDevice(index)))"
+        end
     end
     @debug "Accelerator determination stopped!"
 end
@@ -201,9 +378,12 @@ end
 function mna_init(sparse_mat)
     global varDict = parse_env_vars()
     create_env_file()
-    load_accelerator_properties()
+    setup_accelerators()
+    #load_accelerator_properties()
 
     global accelerator = systemcheck()
+    global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]
+    @debug accelerators
     global run = true
     global csr_mat = sparse_mat
 

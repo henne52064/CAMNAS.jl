@@ -2,18 +2,10 @@
 available = true
 priority = 1
 flops = 1.3e12
-memory_gb = 64.0
-memory_bandwidth_gbps = 60.0
-stability_rating = 1.0
 power_watts = 95.0
-energy_efficiency = 2.6e9
 
 [cuda]
 available = true
 priority = 2
 flops = 1.2e13
-memory_gb = 24.0
-memory_bandwidth_gbps = 2768.0
-stability_rating = 0.98
 power_watts = 250.0
-energy_efficiency = 4.8e10
