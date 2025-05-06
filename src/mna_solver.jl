@@ -133,12 +133,17 @@ function select_accelerator(strategy::DefaultStrategy, accelerators::Vector{Abst
 end
 
 function select_accelerator(strategy::LowestPowerStrategy, accelerators::Vector{AbstractAccelerator})
-
+    available = filter(x -> x.properties.availability, accelerators)
+    value, index = findmin(x -> x.properties.power_watts, available)
+    accelerator = available[index]
 
 
 end
 
 function select_accelerator(strategy::HighestFlopsStrategey, accelerators::Vector{AbstractAccelerator})
+    available = filter(x -> x.properties.availability, accelerators)
+    value, index = findmax(x -> x.properties.flops, available)
+    accelerator = available[index]
 
 end
 
@@ -280,7 +285,7 @@ function find_accelerator()
         @info "[CAMNAS] No accelerator found."
         accelerator = NoAccelerator()
     end
-    #accelerator = select_accelerator(HighestFlopsStrategey(), accelerators)
+    accelerator = select_accelerator(HighestFlopsStrategey(), accelerators)
     @debug "Lowest power consumption with $accelerator as accelerator"
     return accelerator
 end
