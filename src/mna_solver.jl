@@ -121,19 +121,19 @@ function load_accelerator_properties()
     @debug "Stored properties for all accelerators:\n$(join(["$name => $(acceleratorPropertiesDict[name])" for name in keys(acceleratorPropertiesDict)], "\n"))"
 end
 
-function select_accelerator(strategy::AbstractSelectionStrategy, accelerators::Vector{AbstractAccelerator})
+function select_strategy(strategy::AbstractSelectionStrategy, accelerators::Vector{AbstractAccelerator})
     global accelerators
     @debug "Strategy not implemented, falling back to DefaultStrategy"
     select_accelerator(DefaultStrategy(), accelerators)
 end
 
-function select_accelerator(strategy::DefaultStrategy, accelerators::Vector{AbstractAccelerator})
+function select_strategy(strategy::DefaultStrategy, accelerators::Vector{AbstractAccelerator})
     # sort vector of accelerators to a specific order and then choose the first available
 
     
 end
 
-function select_accelerator(strategy::LowestPowerStrategy, accelerators::Vector{AbstractAccelerator})
+function select_strategy(strategy::LowestPowerStrategy, accelerators::Vector{AbstractAccelerator})
     global accelerators
     available = filter(x -> x.properties.availability, accelerators)
     value, index = findmin(x -> x.properties.power_watts, available)
@@ -142,7 +142,7 @@ function select_accelerator(strategy::LowestPowerStrategy, accelerators::Vector{
 
 end
 
-function select_accelerator(strategy::HighestFlopsStrategey, accelerators::Vector{AbstractAccelerator})
+function select_strategy(strategy::HighestFlopsStrategey, accelerators::Vector{AbstractAccelerator})
     global accelerators
     available = filter(x -> x.properties.availability, accelerators)
     value, index = findmax(x -> x.properties.flops, available)
@@ -290,7 +290,7 @@ function find_accelerator()
         accelerator = NoAccelerator()
     end
     @debug "Accelerator type is $(typeof(accelerators))"
-    accelerator = select_accelerator(HighestFlopsStrategey(), accelerators)
+    accelerator = select_strategy(HighestFlopsStrategey(), accelerators)
     @debug "Lowest power consumption with $accelerator as accelerator"
     return accelerator
 end
