@@ -11,6 +11,7 @@ begin # Initialization
     ENV["JL_MNA_RUNTIME_SWITCH"] = "true" # Enable runtime switch
     ENV["JL_MNA_PRINT_ACCELERATOR"] = "true" # Enable printing accelerator in each solve steps
     push!(LOAD_PATH, pwd())
+    #push!(LOAD_PATH, "$(pwd())/accelerators")
     @info LOAD_PATH
     using Pkg
     Pkg.activate(LOAD_PATH[4])
@@ -34,7 +35,7 @@ begin # Initialization
         rowIndex = parse.(Cint, split(system_matrix_strings[2]))
         colIndex = parse.(Cint, split(system_matrix_strings[3]))
 
-        system_matrix = dpsim_csr_matrix(
+        system_matrix = CAMNAS.dpsim_csr_matrix(
             Base.unsafe_convert(Ptr{Cdouble}, values),
             Base.unsafe_convert(Ptr{Cint}, rowIndex),
             Base.unsafe_convert(Ptr{Cint}, colIndex),
