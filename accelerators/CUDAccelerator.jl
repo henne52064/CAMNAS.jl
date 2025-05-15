@@ -10,13 +10,10 @@ struct CUDAccelerator <: AbstractAccelerator
     properties::AcceleratorProperties
 
 
-    function CUDAccelerator(name::String; properties=AcceleratorProperties(true, 1, 1.0, 1.0))
+    function CUDAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, 1.0))
         new(name, properties)
     end
 
-    function CUDAccelerator(name::String)
-        new(name, AcceleratorProperties(true, 1, 1.0, 1.0))
-    end
 
     function CUDAccelerator()
         new("cuda", AcceleratorProperties(true, 1, 1.0, 1.0))
@@ -42,7 +39,7 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     for dev in devices 
         cuda_acc = CUDAccelerator(CUDA.name(dev))
         cuda_flops = estimate_flops(dev)
-        cuda_acc = CUDAccelerator(CUDA.name(dev), properties = AcceleratorProperties(true, 1, cuda_flops, power_limits[i]))
+        cuda_acc = CUDAccelerator(CUDA.name(dev), AcceleratorProperties(true, 1, cuda_flops, power_limits[i]))
         push!(accelerators, cuda_acc)
         i += 1
     end

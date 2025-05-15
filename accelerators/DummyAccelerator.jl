@@ -5,13 +5,10 @@ struct DummyAccelerator <: AbstractAccelerator
     name::String
     properties::AcceleratorProperties
 
-    function DummyAccelerator(name::String; properties=AcceleratorProperties(true, 1, 1.0, 1.0))
+    function DummyAccelerator(name::String, AcceleratorProperties(true, 1, 1.0, 1.0))
         new(name, properties)
     end
 
-    function DummyAccelerator(name::String)
-        new(name, AcceleratorProperties(true, 1, 1.0, 1.0))
-    end
 
 
     function DummyAccelerator()

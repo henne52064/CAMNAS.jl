@@ -52,7 +52,7 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     end
 
     cpu_flops = estimate_flops(NoAccelerator())
-    cpu = NoAccelerator("cpu", properties = AcceleratorProperties(true, 1, cpu_flops, 95.0))
+    cpu = NoAccelerator("cpu", AcceleratorProperties(true, 1, cpu_flops, 95.0))
     push!(accelerators, cpu)
 
 

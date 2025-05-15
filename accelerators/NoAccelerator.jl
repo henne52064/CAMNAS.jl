@@ -6,13 +6,10 @@ struct NoAccelerator <: AbstractAccelerator
     properties::AcceleratorProperties
     
 
-    function NoAccelerator(name::String; properties=AcceleratorProperties(true, 1, 1.0, 1.0))
+    function NoAccelerator(name::String, AcceleratorProperties(true, 1, 1.0, 1.0))
         new(name, properties)
     end
 
-    function NoAccelerator(name::String)
-        new(name, AcceleratorProperties(false, 1, 1.0, 1.0))
-    end
     
     function NoAccelerator()
         new("cpu", AcceleratorProperties(true, 1, 1.0, 1.0))
