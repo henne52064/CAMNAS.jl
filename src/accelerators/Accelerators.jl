@@ -28,7 +28,7 @@ struct AcceleratorProperties
 end
 
 # include all accelerator files
-
+global accelerator_files
 accelerator_files = Vector()
 read(`pwd`, String)
 for file in readdir(dirname(@__FILE__), join=true)
@@ -52,17 +52,18 @@ function check_accelerator(accelerator::AbstractAccelerator) end
 
 function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Accelerator structs are called like the .jl file
     global accelerator_files
-
-    for file in accelerator_files
-        structname = split(file, ".")[1]
-        if isdefined(@__MODULE__, :discover_accelerator)
-            accelerator_type = getfield(Accelerators, Symbol(structname))
-            @debug "try to create struct from string: $accelerator_type"
-            @debug typeof(accelerator_type())
-            discover_accelerator(accelerators, accelerator_type())  
-            # Base.delete_binding(@__MODULE__, :discover_accelerator)
+    if isempty(accelerators)
+        for file in accelerator_files
+            structname = split(file, ".")[1]
+            if isdefined(@__MODULE__, :discover_accelerator)
+                accelerator_type = getfield(Accelerators, Symbol(structname))
+                @debug "try to create struct from string: $accelerator_type"
+                @debug typeof(accelerator_type())
+                discover_accelerator(accelerators, accelerator_type())  
+                # Base.delete_binding(@__MODULE__, :discover_accelerator)
+            end
+            
         end
-        
     end
 end
 

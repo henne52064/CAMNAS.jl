@@ -231,9 +231,6 @@ end
 function mna_init(sparse_mat)
     global varDict = parse_env_vars()
     create_env_file()
-    #setup_accelerators()
-    @debug typeof(accelerators_vector)
-    #discover_accelerator(accelerators_vector)
     Accelerators.load_all_accelerators(accelerators_vector)
 
     global accelerator = systemcheck()
