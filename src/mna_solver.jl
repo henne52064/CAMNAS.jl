@@ -5,7 +5,7 @@ using LinearAlgebra
 using FileWatching
 using TOML
 
-include("../accelerators/accelerators.jl")
+include("accelerators/Accelerators.jl")
 include("config.jl")
 
 
@@ -233,7 +233,8 @@ function mna_init(sparse_mat)
     create_env_file()
     #setup_accelerators()
     @debug typeof(accelerators_vector)
-    discover_accelerator(accelerators_vector)
+    #discover_accelerator(accelerators_vector)
+    Accelerators.load_all_accelerators(accelerators_vector)
 
     global accelerator = systemcheck()
     #global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]

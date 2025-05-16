@@ -29,6 +29,10 @@ end
 # function check_accelerator(accelerator::CUDAccelerator) end
 # function estimate_flops(accelerator::CUDAccelerator) end
 
+# function discover_accelerator()
+#     return CUDAccelerator()
+# end
+
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::CUDAccelerator) 
 
     devices = collect(CUDA.devices())   # Vector of CUDA devices 

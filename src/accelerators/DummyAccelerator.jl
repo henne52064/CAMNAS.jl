@@ -5,7 +5,7 @@ struct DummyAccelerator <: AbstractAccelerator
     name::String
     properties::AcceleratorProperties
 
-    function DummyAccelerator(name::String, AcceleratorProperties(true, 1, 1.0, 1.0))
+    function DummyAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, 1.0))
         new(name, properties)
     end
 
@@ -19,6 +19,10 @@ end
 
 struct DummyLUdecomp <: AbstractLUdecomp
 end
+
+# function discover_accelerator()
+#     return DummyAccelerator()
+# end
 
 # function discover_accelerator(accelerator::AbstractAccelerator) end
 # function check_accelerator(accelerator::AbstractAccelerator) end
