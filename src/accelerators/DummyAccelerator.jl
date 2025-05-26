@@ -20,13 +20,27 @@ end
 struct DummyLUdecomp <: AbstractLUdecomp
 end
 
-# function discover_accelerator()
-#     return DummyAccelerator()
-# end
+function discover_accelerator() end
 
-# function discover_accelerator(accelerator::AbstractAccelerator) end
+function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::DummyAccelerator) 
+    if !isempty(filter(x -> x.name == "dummy_accelerator", accelerators)) # check if cpu is already in accelerators_vector
+        return
+    end
+    @debug "Calling discover DummyAccelerator function here"
+    dummy_accelerator_flops = estimate_flops(DummyAccelerator())
+    dummy_accelerator = DummyAccelerator("dummy_accelerator", AcceleratorProperties(true, 1, dummy_accelerator_flops, 95.0))
+    push!(accelerators, dummy_accelerator)
+end
+
+# same implementation as NoAccelerator
+function estimate_flops(accelerator::DummyAccelerator) # returns flops in GFLOPs
+    
+    return 400.0    #   choose an arbitrary value for dummyaccelerator
+
+end
+
 # function check_accelerator(accelerator::AbstractAccelerator) end
-# function estimate_flops(accelerator::AbstractAccelerator) end
+
 
 # function mna_solve(my_system_matrix, rhs, accelerator::AbstractAccelerator) end
 

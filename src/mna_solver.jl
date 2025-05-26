@@ -21,7 +21,7 @@ abstract type AbstractSelectionStrategy end
 
 struct DefaultStrategy <: AbstractSelectionStrategy end #choose first accelerator from a defined order
 struct LowestPowerStrategy <: AbstractSelectionStrategy end
-struct HighestFlopsStrategey <: AbstractSelectionStrategy end
+struct HighestFlopsStrategy <: AbstractSelectionStrategy end
 
 acceleratorPropertiesDict = Dict()
 
@@ -63,7 +63,7 @@ function select_strategy(strategy::LowestPowerStrategy, accelerators_vector::Vec
 
 end
 
-function select_strategy(strategy::HighestFlopsStrategey, accelerators_vector::Vector{AbstractAccelerator})
+function select_strategy(strategy::HighestFlopsStrategy, accelerators_vector::Vector{AbstractAccelerator})
     global accelerators_vector
     available = filter(x -> x.properties.availability, accelerators_vector)
     value, index = findmax(x -> x.properties.flops, available)
@@ -133,7 +133,7 @@ function find_accelerator()
         accelerator = NoAccelerator()
     end
     @debug "Accelerator type is $(typeof(accelerator))"
-    #accelerator = select_strategy(HighestFlopsStrategey(), accelerators)
+    accelerator = select_strategy(LowestPowerStrategy(), accelerators_vector)
     @debug "Lowest power consumption with $accelerator as accelerator"
     return accelerator
 end
