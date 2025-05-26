@@ -44,7 +44,7 @@ end
 @debug accelerator_files
 
 
-function check_accelerator(accelerator::AbstractAccelerator) end
+
 
 # TODO: error handling
 function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Accelerator structs are called like the .jl file

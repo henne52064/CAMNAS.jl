@@ -45,7 +45,6 @@ function get_tdp(accelerator::DummyAccelerator) # returns flops in GFLOPs
 
 end
 
-# function check_accelerator(accelerator::AbstractAccelerator) end
 
 
 # function mna_solve(my_system_matrix, rhs, accelerator::AbstractAccelerator) end

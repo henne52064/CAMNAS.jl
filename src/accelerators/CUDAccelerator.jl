@@ -29,13 +29,7 @@ struct CUDA_LUdecomp <: AbstractLUdecomp
     lu_decomp::CUSOLVERRF.RFLU
 end
 
-# function discover_accelerator(accelerator::CUDAccelerator) end
-# function check_accelerator(accelerator::CUDAccelerator) end
-# function estimate_flops(accelerator::CUDAccelerator) end
 
-# function discover_accelerator()
-#     return CUDAccelerator()
-# end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::CUDAccelerator) 
 
@@ -67,10 +61,6 @@ function mna_solve(system_matrix::CUDA_LUdecomp, rhs, accelerator::CUDAccelerato
 end
 
 function estimate_flops(dev::CUDA.CuDevice)   # returns flops in GFLOPs
-
-    # devices = collect(CUDA.devices())
-    # dev::CUDA.CuDevice = findfirst(device -> CUDA.name(device) == accelerator.name, devices)
-
 
     n_sms = CUDA.attribute(dev, CUDA.DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT)
     clock_hz = CUDA.attribute(dev, CUDA.DEVICE_ATTRIBUTE_CLOCK_RATE) * 1000 # in kHz

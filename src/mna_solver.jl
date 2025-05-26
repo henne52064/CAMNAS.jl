@@ -23,21 +23,12 @@ struct DefaultStrategy <: AbstractSelectionStrategy end #choose first accelerato
 struct LowestPowerStrategy <: AbstractSelectionStrategy end
 struct HighestFlopsStrategy <: AbstractSelectionStrategy end
 
-acceleratorPropertiesDict = Dict()
-
-# LU Struct
-
-
-
-
 
 
 # Vector of available accelerators
 global accelerators_vector = Vector{AbstractAccelerator}()
 system_environment = Channel(1)
 accelerator = NoAccelerator()
-#system_matrix = nothing
-#system_matrix = Vector{Any}(undef,2)
 system_matrix = Vector{AbstractLUdecomp}(undef,2)   
 
 
@@ -72,49 +63,6 @@ function select_strategy(strategy::HighestFlopsStrategy, accelerators_vector::Ve
 end
 
 
-
-
-
-
-
-
-
-function setup_accelerators()
-    global accelerators_vector
-    @debug "type of accelerators_vector $(typeof(accelerators_vector))"
-    cpu_flops = Accelerators.estimate_flops()
-    cpu = NoAccelerator("cpu", properties = AcceleratorProperties(true, 1, cpu_flops, 95)) # not a direct way from Julia to get CPU TDP
-    push!(accelerators_vector, cpu)
-
-    
-    
-    gpu_flops = Accelerators.estimate_flops(CuDevice(0))
-    gpu_p40 = CUDAccelerator("P40", properties = AcceleratorProperties(true, 1, gpu_flops, 250))
-    push!(accelerators_vector, gpu_p40)
-    @debug "2nd time: type of accelerators_vector $(typeof(accelerators_vector))"
-
-
-    gpu_flops = Accelerators.estimate_flops(CuDevice(1))
-    gpu_t4 = CUDAccelerator("T4", properties = AcceleratorProperties(true, 1, gpu_flops, 70))
-    push!(accelerators_vector, gpu_t4)
-
-    gpu_flops = Accelerators.estimate_flops(CuDevice(2))
-    gpu_a2 = CUDAccelerator("A2", properties = AcceleratorProperties(true, 1, gpu_flops, 60))
-    push!(accelerators_vector, gpu_a2)
-
-    gpu_flops = Accelerators.estimate_flops(CuDevice(3))
-    gpu_p40_2 = CUDAccelerator("P40_2", properties = AcceleratorProperties(true, 1, gpu_flops, 250))
-    push!(accelerators_vector, gpu_p40_2)
-
-
-    # Since powerconsumption not readable from system info, might add later with NVML
-    # for dev in CUDA.devices()
-    #     gpu_flops = estimate_cuda_fp64_flops(dev)
-    #     gpu = CUDAccelerator(properties = AcceleratorProperties(true, 1, gpu_flops, 70))
-    #     push!(gpu)
-
-
-end
 
 function find_accelerator()
     global accelerators_vector
@@ -307,20 +255,7 @@ function transfer_LU_CUDA2CPU(cuda_lu::CUDA_LUdecomp) #transfer LU factorization
     # Construct CPU-side sparse matrix in CSR format
     M_cpu = SparseMatrixCSR{1}(nrow, ncol, rowPtr, colVal, nzVal)   # 1 indicates index base
     cpu_lu_decomp = SparseArrays.lu(M_cpu) |> CPU_LUdecomp
-    #cpu_lu_decomp = CPU_LUdecomp(M_cpu)
+    
     @debug "Type of lu_decomp is $(typeof(lu_decomp))"
     return cpu_lu_decomp
 end
-
-# function transfer_LU_CUDA2CPU(rf::CUSOLVERRF.RFLU) #transfer LU factorization from CUSOLVERRF.RFLU to SparseArrays.UMFPACK.UMFPACKLU type
-#     # Access combined LU matrix (GPU, CSR format)
-#     M_gpu = rf.M    # M = L + U
-    
-#     # Transfer to CPU
-#     @debug "typeof collect(M_gpu): $(typeof(collect(M_gpu)))"
-#     M_cpu = SparseMatrixCSR(collect(M_gpu))  # -> added SparseMatricesCSR.jl, otherwise in CSC Format
-#     @debug "Type of M_gpu is $(typeof(M_gpu)), typeof M_cpu is $(typeof(M_cpu))"
-#     lu_decomp = SparseArrays.lu(M_cpu)
-#     @debug "Type of lu_decomp is $(typeof(lu_decomp))"
-#     return lu_decomp
-# end

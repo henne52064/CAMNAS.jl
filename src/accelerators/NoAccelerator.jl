@@ -92,8 +92,7 @@ function get_tdp(accelerator::NoAccelerator)
     return 95.0
 end
 
-# function discover_accelerator(accelerator::AbstractAccelerator) end
-# function check_accelerator(accelerator::AbstractAccelerator) end
+
 
 # function mna_decomp(sparse_mat, accelerator::AbstractAccelerator) end
 # function mna_solve(my_system_matrix, rhs, accelerator::AbstractAccelerator) end
