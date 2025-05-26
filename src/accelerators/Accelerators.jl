@@ -27,6 +27,9 @@ struct AcceleratorProperties
 
 end
 
+
+# not in function on purpose, otherwise scope issue with include statements
+
 # include all accelerator files
 global accelerator_files
 accelerator_files = Vector()
@@ -39,17 +42,11 @@ for file in readdir(dirname(@__FILE__), join=true)
     end
 end
 @debug accelerator_files
-    
-
-
-
-# include("CUDAccelerator.jl")
-# include("NoAccelerator.jl")
-# include("DummyAccelerator.jl")
 
 
 function check_accelerator(accelerator::AbstractAccelerator) end
 
+# TODO: error handling
 function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Accelerator structs are called like the .jl file
     global accelerator_files
     if isempty(accelerators)
@@ -65,14 +62,7 @@ function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Ac
     end
 end
 
-function discover_accelerator(accelerators::Vector{AbstractAccelerator}) 
-    # call every discover function 
 
-    discover_accelerator(accelerators, NoAccelerator())
-    discover_accelerator(accelerators, CUDAccelerator())
-    discover_accelerator(accelerators, DummyAccelerator())
-
-end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::AbstractAccelerator)
 
@@ -101,6 +91,10 @@ end
 
 function estimate_flops(accelerator::AbstractAccelerator)     # returns flops in GFLOPs
     return 1    # in case of missing implementation return 1 Flop
+end
+
+function get_tdp(accelerator::AbstractAccelerator)
+    return floatmax(Float64)
 end
 
 

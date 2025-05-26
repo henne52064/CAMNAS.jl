@@ -35,7 +35,13 @@ end
 # same implementation as NoAccelerator
 function estimate_flops(accelerator::DummyAccelerator) # returns flops in GFLOPs
     
-    return 400.0    #   choose an arbitrary value for dummyaccelerator
+    return 400.0    #   choose an arbitrary FLOPs value for dummyaccelerator
+
+end
+
+function get_tdp(accelerator::DummyAccelerator) # returns flops in GFLOPs
+    
+    return 400.0    #   choose an arbitrary powerconsumption value for dummyaccelerator
 
 end
 

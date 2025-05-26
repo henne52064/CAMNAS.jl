@@ -8,15 +8,19 @@ using CUSOLVERRF
 struct CUDAccelerator <: AbstractAccelerator 
     name::String
     properties::AcceleratorProperties
+    device::CuDevice
 
 
-    function CUDAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, 1.0))
-        new(name, properties)
+    function CUDAccelerator(name::String, properties::AcceleratorProperties, dev::CuDevice)
+        new(name, properties, dev)
     end
 
+    function CUDAccelerator(name::String, dev::CuDevice)
+        new(name, AcceleratorProperties(true, 1, 1.0, 1.0), dev)
+    end
 
     function CUDAccelerator()
-        new("cuda", AcceleratorProperties(true, 1, 1.0, 1.0))
+        new("cuda", AcceleratorProperties(true, 1, 1.0, 1.0), CuDevice(0))
     end
 
 end
@@ -36,16 +40,14 @@ end
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::CUDAccelerator) 
 
     devices = collect(CUDA.devices())   # Vector of CUDA devices 
-    power_limits = readlines(`nvidia-smi --query-gpu=power.limit --format=csv,noheader,nounits`)
-    power_limits = parse.(Float64, power_limits)  
 
-    i = 1
+
     for dev in devices 
-        cuda_acc = CUDAccelerator(CUDA.name(dev))
+        cuda_acc = CUDAccelerator(CUDA.name(dev), dev)
+        power_limit = get_tdp(cuda_acc)
         cuda_flops = estimate_flops(dev)
-        cuda_acc = CUDAccelerator(CUDA.name(dev), AcceleratorProperties(true, 1, cuda_flops, power_limits[i]))
+        cuda_acc = CUDAccelerator(CUDA.name(dev), AcceleratorProperties(true, 1, cuda_flops, power_limit), dev)
         push!(accelerators, cuda_acc)
-        i += 1
     end
     
 end
@@ -101,4 +103,14 @@ function get_cores_per_sm(cc::VersionNumber)
         @warn "Unknown compute capability $cc; assuming 2 cores/SM"
         return 2
     end
+end
+
+function get_tdp(accelerator::CUDAccelerator)
+
+    device_id = accelerator.device.handle
+
+    cmd = `nvidia-smi -i $device_id --query-gpu=power.limit --format=csv,noheader,nounits`
+    power_limit = readline(cmd)
+    power_limit = parse(Float64, power_limit) 
+    return power_limit
 end

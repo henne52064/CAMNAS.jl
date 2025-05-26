@@ -27,7 +27,8 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     end
 
     cpu_flops = estimate_flops(NoAccelerator())
-    cpu = NoAccelerator("cpu", AcceleratorProperties(true, 1, cpu_flops, 95.0))
+    cpu_power = get_tdp(NoAccelerator())
+    cpu = NoAccelerator("cpu", AcceleratorProperties(true, 1, cpu_flops, cpu_power))
     push!(accelerators, cpu)
 
 end
@@ -85,6 +86,10 @@ function estimate_flops(accelerator::NoAccelerator) # returns flops in GFLOPs
 
     
 
+end
+
+function get_tdp(accelerator::NoAccelerator)
+    return 95.0
 end
 
 # function discover_accelerator(accelerator::AbstractAccelerator) end
