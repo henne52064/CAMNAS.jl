@@ -1,4 +1,5 @@
 module Accelerators
+import ..CAMNAS
 
 export AbstractAccelerator, AcceleratorProperties, AbstractLUdecomp
 export discover_accelerator, check_accelerator, mna_decomp, mna_solve, estimate_flops

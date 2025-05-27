@@ -170,7 +170,7 @@ function determine_accelerator()
     @debug "Accelerator determination stopped!"
 end
 
-function set_accelerator!(acc)
+function set_accelerator!(acc::AbstractAccelerator)
     @debug "Setting accelerator to: $(typeof(acc))"
     global accelerator = acc
 end

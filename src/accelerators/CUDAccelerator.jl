@@ -100,7 +100,16 @@ function get_tdp(accelerator::CUDAccelerator)
     device_id = accelerator.device.handle
 
     cmd = `nvidia-smi -i $device_id --query-gpu=power.limit --format=csv,noheader,nounits`
-    power_limit = readline(cmd)
-    power_limit = parse(Float64, power_limit) 
+    power_limit = readlines(cmd)
+    power_limit = parse(Float64, power_limit[1]) 
     return power_limit
+end
+
+function set_accelerator!(acc::CUDAccelerator)
+
+    CUDA.device!(acc.device)
+    @debug "Current CUDA device is $(CUDA.device())"
+    @debug "This is CAMNAS.accelerator from CUDAccelerator.jl: $(CAMNAS.accelerator)"
+    CAMNAS.accelerator = acc
+
 end
