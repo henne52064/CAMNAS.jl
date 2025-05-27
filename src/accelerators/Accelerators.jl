@@ -47,17 +47,33 @@ end
 
 
 
-# TODO: error handling
+
 function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Accelerator structs are called like the .jl file
     global accelerator_files
     if isempty(accelerators)
         for file in accelerator_files
             structname = split(file, ".")[1]
-            if isdefined(@__MODULE__, :discover_accelerator)
-                accelerator_type = getfield(Accelerators, Symbol(structname))
-                @debug "try to create struct from string: $accelerator_type"
-                discover_accelerator(accelerators, accelerator_type())
+            symbol =  Symbol(structname)
+
+            if !isdefined(Accelerators, symbol)
+                @warn "No struct named '$structname' found in module Accelerators."
+                continue
             end
+
+            accelerator_type = getfield(Accelerators, symbol)
+
+            if !isdefined(@__MODULE__, :discover_accelerator)
+                @warn "No function `discover_accelerator` defined for file '$file'."
+                continue
+            end
+
+            try
+                instance = accelerator_type()
+                discover_accelerator(accelerators, instance)
+            catch e
+                @error "Failed to create instance of $structname or call discover_accelerator: $e"
+            end
+
         end
     end
 end
