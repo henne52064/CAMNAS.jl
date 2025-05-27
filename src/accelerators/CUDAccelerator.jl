@@ -5,6 +5,8 @@ using CUDA
 using CUDA.CUSPARSE
 using CUSOLVERRF
 
+using Printf
+
 struct CUDAccelerator <: AbstractAccelerator 
     name::String
     properties::AcceleratorProperties
@@ -99,9 +101,10 @@ end
 
 function get_tdp(accelerator::CUDAccelerator)
 
-    device_id = accelerator.device.handle
+    mapping = map_CuDevice_to_nvidiasmi()
+    cuda_device_id = accelerator.device.handle
 
-    cmd = `nvidia-smi -i $device_id --query-gpu=power.limit --format=csv,noheader,nounits`
+    cmd = `nvidia-smi -i $(mapping[cuda_device_id]) --query-gpu=power.limit --format=csv,noheader,nounits`
     power_limit = readlines(cmd)
     power_limit = parse(Float64, power_limit[1]) 
     return power_limit
@@ -113,5 +116,39 @@ function set_accelerator!(acc::CUDAccelerator)
     @debug "Current CUDA device is $(CUDA.device())"
     @debug "This is CAMNAS.accelerator from CUDAccelerator.jl: $(CAMNAS.accelerator)"
     CAMNAS.accelerator = acc
+
+end
+
+function map_CuDevice_to_nvidiasmi()
+    # collect CuDevice PCI bus IDs
+    cuda_devices = Dict{Int, String}()
+    for i in 0:length(CUDA.devices()) - 1
+        dev = CuDevice(i)
+        pci = CUDA.attribute(dev, CUDA.DEVICE_ATTRIBUTE_PCI_BUS_ID)
+        pci_hex = @sprintf("%02x" , pci) |> uppercase
+        cuda_devices[i] = pci_hex
+    end
+
+    # collect nvidia-smi device list with PCI and IDs
+    smi_output = readlines(`nvidia-smi --query-gpu=index,pci.bus_id --format=csv,noheader`)
+    smi_devices = Dict{String, Int}()
+    for line in smi_output
+        #isempty(strip(line)) && continue
+        idx, pci_full = split(strip(line), ',')
+        idx = parse(Int, strip(idx))
+        pci_bus_id = strip(pci_full)[10:11]  # extrace "XX" from "00000000:XX:00.0"
+        smi_devices[pci_bus_id] = idx
+    end
+
+    mapping = Dict{Int, Int}()
+    for (i, pci) in cuda_devices
+        if haskey(smi_devices, pci)
+            mapping[i] = smi_devices[pci]
+        else
+            @warn "No matching nvidia-smi device found for CuDevice($i) (PCI $pci)"
+        end
+    end
+
+    return mapping
 
 end
