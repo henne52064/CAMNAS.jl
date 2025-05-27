@@ -71,22 +71,35 @@ end
 
 function find_accelerator()
     global accelerators_vector
-    @debug "Present accelerators: $([a.name for a in accelerators_vector])"
-    if varDict["allow_gpu"] && has_cuda()
-        @debug "CUDA available! Try using CUDA accelerator..."
-        try
-            CuArray(ones(1))
-            accelerator = CUDAccelerator()
-            @info "[CAMNAS] CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
-        catch e
-            @warn "CUDA driver available but could not load CuArrays package."
-        end
+
+    Accelerators.load_all_accelerators(accelerators_vector)
+
+    if !isempty(accelerators_vector) && varDict["allow_gpu"]
+        accelerator = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
     elseif !@isdefined accelerator
         @info "[CAMNAS] No accelerator found."
-        accelerator = NoAccelerator()
+        accelerator = findfirst(x -> x.name == "cpu", accelerators_vector)
     end
-    @debug "Accelerator type is $(typeof(accelerator))"
+
+    @debug "Present accelerators: $([a.name for a in accelerators_vector])"
+
     return accelerator
+
+    # if varDict["allow_gpu"] && has_cuda()
+    #     @debug "CUDA available! Try using CUDA accelerator..."
+    #     try
+    #         CuArray(ones(1))
+    #         accelerator = CUDAccelerator()
+    #         @info "[CAMNAS] CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
+    #     catch e
+    #         @warn "CUDA driver available but could not load CuArrays package."
+    #     end
+    # elseif !@isdefined accelerator
+    #     @info "[CAMNAS] No accelerator found."
+    #     accelerator = NoAccelerator()
+    # end
+    # @debug "Accelerator type is $(typeof(accelerator))"
+    # return accelerator
 end
 
 
@@ -173,7 +186,7 @@ function determine_accelerator()
             idx = findfirst(x -> x.name == "cpu", accelerators_vector)
             typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
         
-        elseif varDict["allow_gpu"] && varDict["force_gpu"] && has_cuda() 
+        elseif varDict["allow_gpu"] && varDict["force_gpu"]
         
             idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
             typeof(accelerator) == CUDAccelerator || Accelerators.set_accelerator!(accelerators_vector[idx])
@@ -183,7 +196,7 @@ function determine_accelerator()
             idx = findfirst(x -> x.name == "dummy_accelerator", accelerators_vector)
             typeof(accelerator) == DummyAccelerator || set_accelerator!(accelerators_vector[idx])
         
-        elseif varDict["allow_gpu"] && has_cuda() 
+        elseif varDict["allow_gpu"] 
         
             idx = findlast(x -> typeof(x) == CUDAccelerator, accelerators_vector)
             typeof(accelerator) == CUDAccelerator || Accelerators.set_accelerator!(accelerators_vector[idx])
@@ -215,7 +228,7 @@ end
 function mna_init(sparse_mat)
     global varDict = parse_env_vars()
     create_env_file()
-    Accelerators.load_all_accelerators(accelerators_vector)
+    #Accelerators.load_all_accelerators(accelerators_vector)
 
     global accelerator = systemcheck()
     #global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]
