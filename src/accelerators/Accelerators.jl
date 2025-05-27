@@ -56,7 +56,6 @@ function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Ac
             if isdefined(@__MODULE__, :discover_accelerator)
                 accelerator_type = getfield(Accelerators, Symbol(structname))
                 @debug "try to create struct from string: $accelerator_type"
-                @debug typeof(accelerator_type())
                 discover_accelerator(accelerators, accelerator_type())
             end
         end

@@ -26,7 +26,7 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     if !isempty(filter(x -> x.name == "dummy_accelerator", accelerators)) # check if cpu is already in accelerators_vector
         return
     end
-    @debug "Calling discover DummyAccelerator function here"
+
     dummy_accelerator_flops = estimate_flops(DummyAccelerator())
     dummy_accelerator = DummyAccelerator("dummy_accelerator", AcceleratorProperties(true, 1, dummy_accelerator_flops, 95.0))
     push!(accelerators, dummy_accelerator)
