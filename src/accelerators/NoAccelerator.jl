@@ -21,6 +21,10 @@ struct CPU_LUdecomp <: AbstractLUdecomp
     lu_decomp::LinearAlgebra.TransposeFactorization
 end
 
+function has_driver(accelerator::NoAccelerator)
+    return true
+end
+
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::NoAccelerator)
     if !isempty(filter(x -> x.name == "cpu", accelerators)) # check if cpu is already in accelerators_vector
         return

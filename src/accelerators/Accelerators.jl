@@ -69,16 +69,19 @@ function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Ac
 
             try
                 instance = accelerator_type()
+                has_driver(instance)
                 discover_accelerator(accelerators, instance)
             catch e
-                @error "Failed to create instance of $structname or call discover_accelerator: $e"
+                @error "Failed to create instance of $structname , call discover_accelerator or driver not found: $e"
             end
 
         end
     end
 end
 
-
+function has_driver(accelerator::AbstractAccelerator)
+    @error "driver not found"
+end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::AbstractAccelerator)
 

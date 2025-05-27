@@ -20,7 +20,9 @@ end
 struct DummyLUdecomp <: AbstractLUdecomp
 end
 
-function discover_accelerator() end
+function has_driver(accelerator::DummyAccelerator) 
+    return true
+end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::DummyAccelerator) 
     if !isempty(filter(x -> x.name == "dummy_accelerator", accelerators)) # check if cpu is already in accelerators_vector

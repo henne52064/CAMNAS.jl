@@ -31,7 +31,9 @@ struct CUDA_LUdecomp <: AbstractLUdecomp
     lu_decomp::CUSOLVERRF.RFLU
 end
 
-
+function has_driver(accelerator::CUDAccelerator)
+    return has_cuda()
+end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::CUDAccelerator) 
 
