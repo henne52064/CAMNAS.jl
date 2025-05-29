@@ -75,10 +75,12 @@ function find_accelerator()
     Accelerators.load_all_accelerators(accelerators_vector)
 
     if !isempty(accelerators_vector) && varDict["allow_gpu"]
-        accelerator = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
+        idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
+        accelerator = accelerators_vector[idx]
     elseif !@isdefined accelerator
         @info "[CAMNAS] No accelerator found."
-        accelerator = findfirst(x -> x.name == "cpu", accelerators_vector)
+        idx = findfirst(x -> x.name == "cpu", accelerators_vector)
+        accelerator = accelerators_vector[idx]
     end
 
     @debug "Present accelerators: $([a.name for a in accelerators_vector])"
