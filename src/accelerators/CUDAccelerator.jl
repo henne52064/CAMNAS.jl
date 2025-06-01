@@ -1,4 +1,4 @@
-export CUDAccelerator, CUDA_LUdecomp
+export CUDAccelerator, CUDAccelerator_LUdecomp
 export discover_accelerator, check_accelerator, mna_decomp, mna_solve
 
 using CUDA
@@ -27,7 +27,7 @@ struct CUDAccelerator <: AbstractAccelerator
 
 end
 
-struct CUDA_LUdecomp <: AbstractLUdecomp 
+struct CUDAccelerator_LUdecomp <: AbstractLUdecomp 
     lu_decomp::CUSOLVERRF.RFLU
 end
 
@@ -53,13 +53,13 @@ end
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
     @debug "Calculate Decomposition on $(CUDA.device())"
     matrix = CuSparseMatrixCSR(CuArray(sparse_mat)) # Sparse GPU implementation
-    lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF) |> CUDA_LUdecomp
+    lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF) |> CUDAccelerator_LUdecomp
 
 
     return lu_decomp
 end
 
-function mna_solve(system_matrix::CUDA_LUdecomp, rhs, accelerator::CUDAccelerator)
+function mna_solve(system_matrix::CUDAccelerator_LUdecomp, rhs, accelerator::CUDAccelerator)
     @debug "Calculate Solve step on $(CUDA.device())"
     rhs_d = CuVector(rhs)
     ldiv!(system_matrix.lu_decomp, rhs_d)

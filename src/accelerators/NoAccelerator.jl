@@ -1,4 +1,4 @@
-export NoAccelerator, CPU_LUdecomp
+export NoAccelerator, NoAccelerator_LUdecomp
 export discover_accelerator, check_accelerator, mna_decomp, mna_solve
 
 struct NoAccelerator <: AbstractAccelerator 
@@ -17,7 +17,7 @@ struct NoAccelerator <: AbstractAccelerator
 
 end
 
-struct CPU_LUdecomp <: AbstractLUdecomp 
+struct NoAccelerator_LUdecomp <: AbstractLUdecomp 
     lu_decomp::LinearAlgebra.TransposeFactorization
 end
 

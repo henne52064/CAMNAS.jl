@@ -82,7 +82,7 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug @isdefined system_matrix
     (@isdefined system_matrix) || ( error("System matrix not initialized! Call init or decomp first!"); return -1 )
     
-    if typeof(system_matrix[1]) == DummyLUdecomp
+    if typeof(system_matrix[1]) == DummyAccelerator_LUdecomp
         @debug typeof(system_matrix[2])
         @debug dump(system_matrix)
         lu_decomp = transfer_LU_CUDA2CPU(system_matrix[2])

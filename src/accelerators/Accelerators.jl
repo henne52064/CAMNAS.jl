@@ -98,7 +98,7 @@ end
 
 
 function mna_decomp(sparse_mat, accelerator::AbstractAccelerator)
-    lu_decomp = SparseArrays.lu(sparse_mat) |> CPU_LUdecomp
+    lu_decomp = SparseArrays.lu(sparse_mat) |> NoAccelerator_LUdecomp
     @debug "CPU $lu_decomp"
     return lu_decomp
 end

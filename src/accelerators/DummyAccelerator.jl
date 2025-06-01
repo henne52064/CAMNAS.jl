@@ -1,4 +1,4 @@
-export DummyAccelerator, DummyLUdecomp
+export DummyAccelerator, DummyAccelerator_LUdecomp
 export discover_accelerator, check_accelerator, mna_decomp, mna_solve
 
 struct DummyAccelerator <: AbstractAccelerator
@@ -17,7 +17,7 @@ struct DummyAccelerator <: AbstractAccelerator
 
 end
 
-struct DummyLUdecomp <: AbstractLUdecomp
+struct DummyAccelerator_LUdecomp <: AbstractLUdecomp
 end
 
 function has_driver(accelerator::DummyAccelerator) 
@@ -53,8 +53,8 @@ end
 
 
 
-# function mna_decomp(sparse_mat::DummyLUdecomp, accelerator::DummyAccelerator)
-#     lu_decomp = SparseArrays.lu(sparse_mat) |> CPU_LUdecomp
+# function mna_decomp(sparse_mat::DummyAccelerator_LUdecomp, accelerator::DummyAccelerator)
+#     lu_decomp = SparseArrays.lu(sparse_mat) |> NoAccelerator_LUdecomp
 #     @debug "Dummy"
 #     return lu_decomp
 # end
