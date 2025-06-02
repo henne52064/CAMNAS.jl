@@ -22,7 +22,7 @@ abstract type AbstractSelectionStrategy end
 struct DefaultStrategy <: AbstractSelectionStrategy end #choose first accelerator from a defined order
 struct LowestPowerStrategy <: AbstractSelectionStrategy end
 struct HighestFlopsStrategy <: AbstractSelectionStrategy end
-
+struct NoStrategy <: AbstractSelectionStrategy end
 
 
 # Vector of available accelerators
@@ -45,6 +45,12 @@ function select_strategy(strategy::DefaultStrategy, accelerators_vector::Vector{
     global current_strategy = strategy
     idx = findfirst(x -> typeof(x) == NoAccelerator, accelerators_vector)
     set_accelerator!(accelerators_vector[idx])
+end
+
+function select_strategy(strategy::NoStrategy, accelerators_vector::Vector{AbstractAccelerator})
+    # sort vector of accelerators to a specific order and then choose the first available
+    global current_strategy = strategy
+
 end
 
 function select_strategy(strategy::LowestPowerStrategy, accelerators_vector::Vector{AbstractAccelerator})
