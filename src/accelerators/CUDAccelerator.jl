@@ -32,10 +32,23 @@ struct CUDAccelerator_LUdecomp <: AbstractLUdecomp
 end
 
 function has_driver(accelerator::CUDAccelerator)
-    return has_cuda()
+    try
+        CUDA.has_cuda()
+    catch e
+        @error "CUDA driver not found: $e"
+        return false
+    end
+    return true
 end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::CUDAccelerator) 
+
+    try
+        has_driver(CUDAccelerator())
+    catch e
+        @error "CUDA driver not found: $e"
+        return
+    end
 
     devices = collect(CUDA.devices())   # Vector of CUDA devices 
 

@@ -26,6 +26,14 @@ function has_driver(accelerator::NoAccelerator)
 end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::NoAccelerator)
+    
+    try
+        has_driver(NoAccelerator())
+    catch e
+        @error "NoAccelerator driver not found: $e"
+        return
+    end
+    
     if !isempty(filter(x -> x.name == "cpu", accelerators)) # check if cpu is already in accelerators_vector
         return
     end
