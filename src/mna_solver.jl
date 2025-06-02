@@ -30,7 +30,7 @@ global accelerators_vector = Vector{AbstractAccelerator}()
 system_environment = Channel(1)
 accelerator = NoAccelerator()
 current_strategy = DefaultStrategy()
-system_matrix = Vector{AbstractLUdecomp}(undef,2)   
+system_matrix = Vector{AbstractLUdecomp}()   
 
 
 
@@ -72,16 +72,21 @@ end
 
 function find_accelerator()
     global accelerators_vector
-
+    try
     Accelerators.load_all_accelerators(accelerators_vector)
+    catch e 
+        @error "Failed to load accelerators: $e"
+        accelerator = NoAccelerator()
+        return accelerator 
+    end
+    
 
     if !isempty(accelerators_vector) && varDict["allow_gpu"]
-        idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
+        idx = findfirst(x -> typeof(x) != NoAccelerator, accelerators_vector)
         accelerator = accelerators_vector[idx]
     elseif !@isdefined accelerator
         @info "[CAMNAS] No accelerator found."
-        idx = findfirst(x -> x.name == "cpu", accelerators_vector)
-        accelerator = accelerators_vector[idx]
+        accelerator = NoAccelerator()
     end
 
     @debug "Present accelerators: $([a.name for a in accelerators_vector])"
@@ -259,23 +264,51 @@ function set_csr_mat(csr_matrix)
     global csr_mat = csr_matrix
 end
 
+"""
+    get_ludecomp_type(accelerator::AbstractAccelerator) -> Type
 
+Given an accelerator object, returns the corresponding LU decomposition type
+by naming convention: <AcceleratorType>_LUdecomp
+"""
 
+function get_ludecomp_type(accelerator::AbstractAccelerator)
+    acc_type = typeof(accelerator)
+    acc_name = string(nameof(typeof(accelerator)))  
+    lu_type_name = Symbol(acc_name * "_LUdecomp")  
+
+    if !isdefined(Accelerators, lu_type_name)
+        error("LU decomposition type $lu_type_name not defined in module $(mod).")
+    end
+
+    return getfield(Accelerators, lu_type_name)
+end
 
 
 
 function mna_decomp(sparse_mat)
+    global accelerators_vector
     set_csr_mat(sparse_mat)
+    decomps = Vector{AbstractLUdecomp}()
     if varDict["runtime_switch"]
-        return [Accelerators.mna_decomp(sparse_mat, NoAccelerator()), Accelerators.mna_decomp(sparse_mat, CUDAccelerator())]
-    elseif accelerator == CUDAccelerator()
-        return [DummyLUdecomp(), Accelerators.mna_decomp(sparse_mat, accelerator)]
-        #sys_mat = Vector{AbstractLUdecomp}(DummyLUdecomp(), mna_decomp(sparse_mat, accelerator))
-        #return sys_mat
-        #return [missing, mna_decomp(sparse_mat, accelerator)]
-    else
-        return [Accelerators.mna_decomp(sparse_mat, accelerator), missing]
+        for accelerator in accelerators_vector
+            if any(x -> typeof(x) == get_ludecomp_type(accelerator), decomps) # check if accelerator is already in decomps
+                continue
+            end
+            lu_decomp = Accelerators.mna_decomp(sparse_mat, accelerator)
+            push!(decomps, lu_decomp)
+        end
+    else                        # only calculate decomposition for the current accelerator
+        #return lu_decomp = Accelerators.mna_decomp(sparse_mat, accelerator)
+        
+        
+        # if accelerator == CUDAccelerator()
+        # return [DummyAccelerator_LUdecomp(), Accelerators.mna_decomp(sparse_mat, accelerator)]
+    
+    #else
+        lu_decomp = Accelerators.mna_decomp(sparse_mat, accelerator)
+        push!(decomps, lu_decomp)
     end
+    return decomps
 end
 
 
@@ -288,7 +321,15 @@ function mna_solve(my_system_matrix, rhs)
     (haskey(ENV, "JL_MNA_PRINT_ACCELERATOR") && ENV["JL_MNA_PRINT_ACCELERATOR"] == "true" ?
         println(typeof(accelerator))
         : nothing)
-    (typeof(accelerator) == CUDAccelerator) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
+    #(typeof(accelerator) == CUDAccelerator) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
+
+    idx = findfirst(x -> typeof(x) == get_ludecomp_type(accelerator), my_system_matrix) 
+    @debug "Index of system matrix for $(typeof(accelerator)): $idx"
+    sys_mat = my_system_matrix[idx]
+    if sys_mat === missing
+        @error "No LU decomposition found for the current accelerator."
+        return nothing
+    end
 
     return Accelerators.mna_solve(sys_mat, rhs, accelerator)
 end
