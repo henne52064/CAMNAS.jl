@@ -43,7 +43,8 @@ end
 function select_strategy(strategy::DefaultStrategy, accelerators_vector::Vector{AbstractAccelerator})
     # sort vector of accelerators to a specific order and then choose the first available
     global current_strategy = strategy
-    
+    idx = findfirst(x -> typeof(x) == NoAccelerator, accelerators_vector)
+    set_accelerator!(accelerators_vector[idx])
 end
 
 function select_strategy(strategy::LowestPowerStrategy, accelerators_vector::Vector{AbstractAccelerator})
@@ -165,8 +166,24 @@ function determine_accelerator()
         # Stop accelerator determination if nothing-value is received
         val === nothing ? break : nothing
 
-        # Currently, we implement a GPU-favoring approach
-        if varDict["allow_strategies"] && varDict["highest_flop_strategy"] && varDict["lowest_power_strategy"] || !(varDict["allow_strategies"])
+        # Currently, force statments are the strongest, then consider strategies
+        if varDict["force_cpu"] && varDict["force_gpu"]
+        
+            @debug "Conflict: Both 'force_cpu' and 'force_gpu' are set. Only one can be forced."
+            idx = findfirst(x -> x.name == "cpu", accelerators_vector)
+            typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
+        
+        elseif varDict["allow_gpu"] && varDict["force_gpu"]
+        
+            idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
+            typeof(accelerator) == CUDAccelerator || Accelerators.set_accelerator!(accelerators_vector[idx])
+            @debug "did this change? $(CUDA.device())"
+
+        elseif varDict["allow_cpu"] && varDict["force_cpu"]
+            idx = findfirst(x -> x.name == "dummy_accelerator", accelerators_vector)
+            typeof(accelerator) == DummyAccelerator || set_accelerator!(accelerators_vector[idx])
+        
+        elseif varDict["allow_strategies"] && varDict["highest_flop_strategy"] && varDict["lowest_power_strategy"] || !(varDict["allow_strategies"])
             @debug "Selected DefaultStrategy"
             select_strategy(DefaultStrategy(), accelerators_vector)    
 
@@ -182,21 +199,6 @@ function determine_accelerator()
             @debug "Selected DefaultStrategy"
             select_strategy(DefaultStrategy(), accelerators_vector)
         
-        elseif varDict["force_cpu"] && varDict["force_gpu"]
-        
-            @debug "Conflict: Both 'force_cpu' and 'force_gpu' are set. Only one can be forced."
-            idx = findfirst(x -> x.name == "cpu", accelerators_vector)
-            typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
-        
-        elseif varDict["allow_gpu"] && varDict["force_gpu"]
-        
-            idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
-            typeof(accelerator) == CUDAccelerator || Accelerators.set_accelerator!(accelerators_vector[idx])
-            @debug "did this change? $(CUDA.device())"
-        
-        elseif varDict["allow_cpu"] && varDict["force_cpu"]
-            idx = findfirst(x -> x.name == "dummy_accelerator", accelerators_vector)
-            typeof(accelerator) == DummyAccelerator || set_accelerator!(accelerators_vector[idx])
         
         elseif varDict["allow_gpu"] 
         
