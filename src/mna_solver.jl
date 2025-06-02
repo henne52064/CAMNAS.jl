@@ -178,6 +178,10 @@ function determine_accelerator()
         val === nothing ? break : nothing
 
         # Currently, force statments are the strongest, then consider strategies
+
+        if varDict["force_cpu"] || varDict["force_gpu"]
+
+            # FORCING
         if varDict["force_cpu"] && varDict["force_gpu"]
         
             @debug "Conflict: Both 'force_cpu' and 'force_gpu' are set. Only one can be forced."
@@ -193,34 +197,39 @@ function determine_accelerator()
         elseif varDict["allow_cpu"] && varDict["force_cpu"]
             idx = findfirst(x -> x.name == "dummy_accelerator", accelerators_vector)
             typeof(accelerator) == DummyAccelerator || set_accelerator!(accelerators_vector[idx])
+            end
+            @debug "Forcing prioritized, using NoStrategy"
+            select_strategy(NoStrategy(), accelerators_vector)
         
-        elseif varDict["allow_strategies"] && varDict["highest_flop_strategy"] && varDict["lowest_power_strategy"] || !(varDict["allow_strategies"])
-            @debug "Selected DefaultStrategy"
+        elseif varDict["allow_strategies"]
+            # STRATEGIES
+            if varDict["highest_flop_strategy"] && varDict["lowest_power_strategy"]
+                @debug "Too many Stragegies set! Only one can be used at a time."
             select_strategy(DefaultStrategy(), accelerators_vector)    
 
-        elseif varDict["allow_strategies"] && varDict["highest_flop_strategy"]
+            elseif varDict["highest_flop_strategy"]
             @debug "Selected HighestFlopsStrategy"
             select_strategy(HighestFlopsStrategy(), accelerators_vector)
         
-        elseif varDict["allow_strategies"] && varDict["lowest_power_strategy"] 
+            elseif varDict["lowest_power_strategy"] 
             @debug "Selected LowestPowerStrategy"
             select_strategy(LowestPowerStrategy(), accelerators_vector)
-        
-        elseif varDict["allow_strategies"] #&& !(varDict["highest_flop_strategy"]) && !(varDict["lowest_power_strategy"])
+            else
             @debug "Selected DefaultStrategy"
             select_strategy(DefaultStrategy(), accelerators_vector)
-        
-        
+            end
         elseif varDict["allow_gpu"] 
-        
             idx = findlast(x -> typeof(x) == CUDAccelerator, accelerators_vector)
             typeof(accelerator) == CUDAccelerator || Accelerators.set_accelerator!(accelerators_vector[idx])
             @debug "did this change? $(CUDA.device())"
+            @debug "No strategy selected, using NoStrategy"
+            select_strategy(NoStrategy(), accelerators_vector)
         
         elseif varDict["allow_cpu"]
-        
             idx = findfirst(x -> x.name == "cpu", accelerators_vector)
             typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
+            @debug "No strategy selected, using NoStrategy"
+            select_strategy(NoStrategy(), accelerators_vector)
         
         else
             @debug "Conflict: Nothing is allowed. THIS DOESNT MAKE SENSE!"
@@ -330,13 +339,12 @@ function mna_solve(my_system_matrix, rhs)
     #(typeof(accelerator) == CUDAccelerator) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 
     idx = findfirst(x -> typeof(x) == get_ludecomp_type(accelerator), my_system_matrix) 
-    @debug "Index of system matrix for $(typeof(accelerator)): $idx"
     sys_mat = my_system_matrix[idx]
     if sys_mat === missing
         @error "No LU decomposition found for the current accelerator."
         return nothing
     end
-
+    @debug "Using system matrix of type $(typeof(sys_mat)) for solving."
     return Accelerators.mna_solve(sys_mat, rhs, accelerator)
 end
 mna_solve(system_matrix, rhs, accelerator::DummyAccelerator) = mna_solve(system_matrix, rhs, NoAccelerator())
