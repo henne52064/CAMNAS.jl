@@ -55,6 +55,7 @@ function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Ac
             structname = split(file, ".")[1]
             symbol =  Symbol(structname)
 
+            try
             if !isdefined(Accelerators, symbol)
                 @warn "No struct named '$structname' found in module Accelerators."
                 continue
@@ -67,32 +68,30 @@ function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Ac
                 continue
             end
 
-            try
                 instance = accelerator_type()
-                has_driver(instance)
+    
+                if !has_driver(instance)
+                    @error "Driver not present for $structname."
+                    continue
+                end
+    
                 discover_accelerator(accelerators, instance)
             catch e
-                @error "Failed to create instance of $structname , call discover_accelerator or driver not found: $e"
+                @error "Error loading accelerator from file '$file': $e"
             end
 
+            
         end
     end
 end
 
 function has_driver(accelerator::AbstractAccelerator)
-    @error "driver not found"
+    @error "has_driver not implemented for $(typeof(accelerator))"
 end
 
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::AbstractAccelerator)
 
-    if !isempty(filter(x -> x.name == "cpu", accelerators)) # check if cpu is already in accelerators_vector
-        return
-    end
-
-    cpu_flops = estimate_flops(NoAccelerator())
-    cpu = NoAccelerator("cpu", AcceleratorProperties(true, 1, cpu_flops, 95.0))
-    push!(accelerators, cpu)
-
+    @error "discover_accelerator not implemented for $(typeof(accelerator))"
 
 end
 
