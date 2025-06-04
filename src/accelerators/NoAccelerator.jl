@@ -48,6 +48,7 @@ end
 function estimate_flops(accelerator::NoAccelerator) # returns flops in GFLOPs
     float_bits::Int = 64
     # run lscpu and collect lines
+    if Sys.islinux()
     output = read(`lscpu`, String)
     lines = split(output, '\n')
 
@@ -81,6 +82,15 @@ function estimate_flops(accelerator::NoAccelerator) # returns flops in GFLOPs
     else
         64  # fallback guess
     end
+    elseif Sys.isapple()
+        # Apple Silicon
+
+        return 1.0  # Apple Silicon does not support FLOPs estimation via lscpu
+
+    else
+        error("Unsupported OS for FLOPs estimation")
+    end
+
 
     # estimate FLOPs per cycle per core
     floats_per_vector = simd_bits / float_bits
