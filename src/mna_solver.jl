@@ -122,22 +122,21 @@ function find_accelerator()
         Accelerators.load_all_accelerators(accelerators_vector)
     catch e 
         @error "Failed to load accelerators: $e"
-        accelerator = NoAccelerator()
-        return accelerator 
+        set_accelerator!(NoAccelerator()) 
     end
     
 
     if !isempty(accelerators_vector) && varDict["allow_gpu"]
         idx = findfirst(x -> typeof(x) != NoAccelerator, accelerators_vector)
-        accelerator = accelerators_vector[idx]
+        set_accelerator!(accelerators_vector[idx])
     elseif !@isdefined accelerator
         @info "[CAMNAS] No accelerator found."
-        accelerator = NoAccelerator()
+        set_accelerator!(NoAccelerator())
     end
 
     @debug "Present accelerators: $([a.name for a in accelerators_vector])"
 
-    return accelerator
+    
 
     # if varDict["allow_gpu"] && has_cuda()
     #     @debug "CUDA available! Try using CUDA accelerator..."
@@ -160,9 +159,9 @@ end
 function systemcheck()
     if varDict["hwAwarenessDisabled"]
         @info "[CAMNAS] Hardware awareness disabled... Using Fallback implementation"
-        return NoAccelerator()
+        set_accelerator!(NoAccelerator())
     else
-        return find_accelerator()
+        find_accelerator()
     end
 end
 
@@ -294,7 +293,7 @@ function mna_init(sparse_mat)
     create_env_file()
     #Accelerators.load_all_accelerators(accelerators_vector)
 
-    global accelerator = systemcheck()
+    systemcheck()
     #global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]
     @debug accelerators_vector
     global run = true
