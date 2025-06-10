@@ -167,6 +167,7 @@ end
 
 
 function file_watcher()
+    @debug "File watcher is running on Thread $(Threads.threadid())"
     file_system_env = (@__DIR__)*"/system.env"
     @debug "Watching sytem environment at : $file_system_env"
     global run
@@ -189,6 +190,7 @@ end
 
 function determine_accelerator()
     global accelerators_vector
+    @debug "determine_accelerator is running on Thread $(Threads.threadid())"
     while true
         val = take!(system_environment)
         @debug "Received new system environment!: $val"
@@ -230,8 +232,7 @@ function determine_accelerator()
             elseif varDict["allow_gpu"] && varDict["force_gpu"]
             
                 idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
-                typeof(accelerator) == CUDAccelerator || Accelerators.set_accelerator!(accelerators_vector[idx])
-                @debug "did this change? $(CUDA.device())"
+                typeof(accelerator) == CUDAccelerator || set_accelerator!(accelerators_vector[idx])
 
             elseif varDict["allow_cpu"] && varDict["force_cpu"]
                 idx = findfirst(x -> x.name == "dummy_accelerator", accelerators_vector)
@@ -259,8 +260,7 @@ function determine_accelerator()
             end
         elseif varDict["allow_gpu"] 
             idx = findlast(x -> typeof(x) == CUDAccelerator, accelerators_vector)
-            typeof(accelerator) == CUDAccelerator || Accelerators.set_accelerator!(accelerators_vector[idx])
-            @debug "did this change? $(CUDA.device())"
+            typeof(accelerator) == CUDAccelerator || set_accelerator!(accelerators_vector[idx])
             @debug "No strategy selected, using NoStrategy"
             select_strategy(NoStrategy(), accelerators_vector)
         
@@ -340,9 +340,19 @@ end
 
 
 function mna_decomp(sparse_mat)
+    @debug "This decomposition is running on $(Threads.threadid())"
     global accelerators_vector
     set_csr_mat(sparse_mat)
     decomps = Vector{AbstractLUdecomp}()
+
+    # FIXME: This is a workaround, getting rid of CUDA specific code would be better
+    # if typeof(accelerator) == CUDAccelerator
+    #     @debug "Setting CUDA device to $(accelerator.device) on Thread $(Threads.threadid())"
+    #     CUDA.device!(accelerator.device)
+    # end
+
+    Accelerators.set_acceleratordevice!(accelerator)
+
     if varDict["runtime_switch"]
         for accelerator in accelerators_vector
             if any(x -> typeof(x) == get_ludecomp_type(accelerator), decomps) # check if accelerator is already in decomps
@@ -383,6 +393,14 @@ function mna_solve(my_system_matrix, rhs)
         @error "No LU decomposition found for the current accelerator."
         return nothing
     end
+
+    # # FIXME: This is a workaround, getting rid of CUDA specific code would be better
+    # if typeof(accelerator) == CUDAccelerator
+    #     @debug "Setting CUDA device to $(accelerator.device) on Thread $(Threads.threadid())"
+    #     CUDA.device!(accelerator.device)
+    # end
+    Accelerators.set_acceleratordevice!(accelerator)
+
     @debug "Using system matrix of type $(typeof(sys_mat)) for solving."
     return Accelerators.mna_solve(sys_mat, rhs, accelerator)
 end

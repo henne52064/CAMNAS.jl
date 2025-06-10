@@ -116,4 +116,12 @@ function get_tdp(accelerator::AbstractAccelerator)
 end
 
 
+"""
+Set the accelerator device for the given accelerator.
+This function needs to be implemented in case there are multiple accelerator devices of the same type.
+"""
+function set_acceleratordevice!(accelerator::AbstractAccelerator)
+    @warn "set_acceleratordevice not implemented or necessary for $(typeof(accelerator))"
+end
+
 end

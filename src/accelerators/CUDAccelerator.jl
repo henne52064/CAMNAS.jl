@@ -64,7 +64,8 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
 end
 
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
-    @debug "Calculate Decomposition on $(CUDA.device())"
+    @debug "Calculate Decomposition on $(CUDA.device()) on Thread $(Threads.threadid())"
+    @debug "Calculating on $(accelerator.name)"
     matrix = CuSparseMatrixCSR(CuArray(sparse_mat)) # Sparse GPU implementation
     lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF) |> CUDAccelerator_LUdecomp
 
@@ -125,13 +126,27 @@ function get_tdp(accelerator::CUDAccelerator)
     return power_limit
 end
 
-function set_accelerator!(acc::CUDAccelerator)
+# function set_accelerator!(acc::CUDAccelerator)
+#     @debug "THIS CUDA.device!() is called on $(Threads.threadid()) before: $(CUDA.device())"
+#     CUDA.device!(acc.device)
+#     @debug "Current CUDA device is $(CUDA.device())"
+#     CAMNAS.accelerator = acc
 
+# end
+
+function set_acceleratordevice!(acc::CUDAccelerator)
+    # This function is used to set the CUDA device for the current thread
+    # It is called by the CAMNAS.jl module to ensure that the correct device is used
+
+    if acc.device == CUDA.device()
+        @debug "CUDA device $(acc.device) is already set on Thread $(Threads.threadid())"
+        return
+    end
+
+
+    @debug "Setting CUDA device to $(acc.device) on Thread $(Threads.threadid())"
     CUDA.device!(acc.device)
-    @debug "Current CUDA device is $(CUDA.device())"
-    @debug "This is CAMNAS.accelerator from CUDAccelerator.jl: $(CAMNAS.accelerator)"
-    CAMNAS.accelerator = acc
-
+    @debug "Current CUDA device is now $(CUDA.device())"
 end
 
 function map_CuDevice_to_nvidiasmi()
