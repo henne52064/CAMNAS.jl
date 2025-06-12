@@ -18,6 +18,7 @@ struct DummyAccelerator <: AbstractAccelerator
 end
 
 struct DummyAccelerator_LUdecomp <: AbstractLUdecomp
+    lu_decomp::LinearAlgebra.TransposeFactorization
 end
 
 function has_driver(accelerator::DummyAccelerator) 

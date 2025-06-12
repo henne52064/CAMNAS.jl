@@ -49,39 +49,39 @@ function estimate_flops(accelerator::NoAccelerator) # returns flops in GFLOPs
     float_bits::Int = 64
     # run lscpu and collect lines
     if Sys.islinux()
-    output = read(`lscpu`, String)
-    lines = split(output, '\n')
+        output = read(`lscpu`, String)
+        lines = split(output, '\n')
 
-    function get_field(key)
-        for line in lines
-            if startswith(line, key)
-                return strip(split(line, ':')[2])
+        function get_field(key)
+            for line in lines
+                if startswith(line, key)
+                    return strip(split(line, ':')[2])
+                end
             end
+            return ""
         end
-        return ""
-    end
 
-    # get required fields
-    cores_per_socket = parse(Int, get_field("Core(s) per socket"))
-    sockets = parse(Int, get_field("Socket(s)"))
-    max_mhz = try
-        parse(Float64, get_field("CPU max MHz"))
-    catch
-        # if max not available
-        parse(Float64, get_field("CPU MHz"))
-    end
-    flags = split(get_field("Flags"))
+        # get required fields
+        cores_per_socket = parse(Int, get_field("Core(s) per socket"))
+        sockets = parse(Int, get_field("Socket(s)"))
+        max_mhz = try
+            parse(Float64, get_field("CPU max MHz"))
+        catch
+            # if max not available
+            parse(Float64, get_field("CPU MHz"))
+        end
+        flags = split(get_field("Flags"))
 
-    # Determine SIMD width in bits
-    simd_bits = if "avx512f" in flags
-        512
-    elseif "avx2" in flags || ("avx" in flags && "fma" in flags)
-        256
-    elseif "sse2" in flags || "sse" in flags
-        128
-    else
-        64  # fallback guess
-    end
+        # Determine SIMD width in bits
+        simd_bits = if "avx512f" in flags
+            512
+        elseif "avx2" in flags || ("avx" in flags && "fma" in flags)
+            256
+        elseif "sse2" in flags || "sse" in flags
+            128
+        else
+            64  # fallback guess
+        end
     elseif Sys.isapple()
         # Apple Silicon
 

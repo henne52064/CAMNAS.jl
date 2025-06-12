@@ -43,7 +43,7 @@ end
 function select_strategy(strategy::DefaultStrategy, accelerators_vector::Vector{AbstractAccelerator})
     # sort vector of accelerators to a specific order and then choose the first available
     global current_strategy = strategy
-    idx = findfirst(x -> typeof(x) == NoAccelerator, accelerators_vector)
+    idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
     set_accelerator!(accelerators_vector[idx])
 end
 
@@ -295,7 +295,7 @@ function mna_init(sparse_mat)
 
     systemcheck()
     #global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]
-    @debug accelerators_vector
+    #@debug accelerators_vector
     global run = true
     global csr_mat = sparse_mat
 
