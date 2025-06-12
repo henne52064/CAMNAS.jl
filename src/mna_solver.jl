@@ -337,12 +337,22 @@ function get_ludecomp_type(accelerator::AbstractAccelerator)
     return getfield(Accelerators, lu_type_name)
 end
 
+"""
+    mna_decomp(sparse_mat::SparseMatrixCSC) -> Vector{AbstractLUdecomp}
 
+Performs the MNA decomposition of the given sparse matrix using the current accelerator.
+"""
 
 function mna_decomp(sparse_mat)
     @debug "This decomposition is running on $(Threads.threadid())"
     global accelerators_vector
     set_csr_mat(sparse_mat)
+
+    for decomp in system_matrix
+        pop!(system_matrix) # clear system_matrix
+        @debug "Cleared system_matrix"
+    end
+
     decomps = Vector{AbstractLUdecomp}()
 
     # FIXME: This is a workaround, getting rid of CUDA specific code would be better
@@ -362,13 +372,7 @@ function mna_decomp(sparse_mat)
             push!(decomps, lu_decomp)
         end
     else                        # only calculate decomposition for the current accelerator
-        #return lu_decomp = Accelerators.mna_decomp(sparse_mat, accelerator)
-        
-        
-        # if accelerator == CUDAccelerator()
-        # return [DummyAccelerator_LUdecomp(), Accelerators.mna_decomp(sparse_mat, accelerator)]
-    
-    #else
+
         lu_decomp = Accelerators.mna_decomp(sparse_mat, accelerator)
         push!(decomps, lu_decomp)
     end
@@ -388,18 +392,27 @@ function mna_solve(my_system_matrix, rhs)
     #(typeof(accelerator) == CUDAccelerator) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
 
     idx = findfirst(x -> typeof(x) == get_ludecomp_type(accelerator), my_system_matrix) 
-    sys_mat = my_system_matrix[idx]
-    if sys_mat === missing
-        @error "No LU decomposition found for the current accelerator."
-        return nothing
+
+    
+    if idx === nothing
+        @debug "Decomposition for $(typeof(accelerator)) is not valid, recalculating..."
+        global csr_mat
+        lu_decomp = Accelerators.mna_decomp(csr_mat, accelerator) # Recalculate decomposition if not valid
+        push!(my_system_matrix, lu_decomp)
+        sys_mat = lu_decomp
+    else
+        sys_mat = my_system_matrix[idx]
     end
+
+   
+
 
     # # FIXME: This is a workaround, getting rid of CUDA specific code would be better
     # if typeof(accelerator) == CUDAccelerator
     #     @debug "Setting CUDA device to $(accelerator.device) on Thread $(Threads.threadid())"
     #     CUDA.device!(accelerator.device)
     # end
-    Accelerators.set_acceleratordevice!(accelerator)
+    Accelerators.set_acceleratordevice!(accelerator)        # sets the ACTUAL physical accelerator device
 
     @debug "Using system matrix of type $(typeof(sys_mat)) for solving."
     return Accelerators.mna_solve(sys_mat, rhs, accelerator)
