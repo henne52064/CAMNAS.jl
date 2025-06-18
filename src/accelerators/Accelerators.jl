@@ -56,26 +56,26 @@ function load_all_accelerators(accelerators::Vector{AbstractAccelerator})   # Ac
             symbol =  Symbol(structname)
 
             try
-            if !isdefined(Accelerators, symbol)
-                @warn "No struct named '$structname' found in module Accelerators."
-                continue
-            end
-
-            accelerator_type = getfield(Accelerators, symbol)
-
-            if !isdefined(@__MODULE__, :discover_accelerator)
-                @warn "No function `discover_accelerator` defined for file '$file'."
-                continue
-            end
-
-                instance = accelerator_type()
-    
-                if !has_driver(instance)
-                    @error "Driver not present for $structname."
+                if !isdefined(Accelerators, symbol)
+                    @warn "No struct named '$structname' found in module Accelerators."
                     continue
                 end
-    
-                discover_accelerator(accelerators, instance)
+
+                accelerator_type = getfield(Accelerators, symbol)
+
+                if !isdefined(@__MODULE__, :discover_accelerator)
+                    @warn "No function `discover_accelerator` defined for file '$file'."
+                    continue
+                end
+
+                    instance = accelerator_type()
+        
+                    if !has_driver(instance)
+                        @error "Driver not present for $structname."
+                        continue
+                    end
+        
+                    discover_accelerator(accelerators, instance)
             catch e
                 @error "Error loading accelerator from file '$file': $e"
             end
@@ -98,7 +98,7 @@ end
 
 function mna_decomp(sparse_mat, accelerator::AbstractAccelerator)
     lu_decomp = SparseArrays.lu(sparse_mat) |> NoAccelerator_LUdecomp
-    @debug "CPU $lu_decomp"
+    #@debug "CPU $lu_decomp"
     return lu_decomp
 end
 

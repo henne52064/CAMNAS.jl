@@ -29,7 +29,7 @@ struct NoStrategy <: AbstractSelectionStrategy end
 global accelerators_vector = Vector{AbstractAccelerator}()
 system_environment = Channel(1)
 accelerator = NoAccelerator()
-current_strategy = DefaultStrategy()
+current_strategy = NoStrategy()
 system_matrix = Vector{AbstractLUdecomp}()   
 
 
@@ -37,7 +37,7 @@ system_matrix = Vector{AbstractLUdecomp}()
 function select_strategy(strategy::AbstractSelectionStrategy, accelerators_vector::Vector{AbstractAccelerator})
     global accelerators_vector
     @debug "Strategy not implemented, falling back to DefaultStrategy"
-    select_accelerator(DefaultStrategy(), accelerators_vector)
+    select_strategy(DefaultStrategy(), accelerators_vector)
 end
 
 function select_strategy(strategy::DefaultStrategy, accelerators_vector::Vector{AbstractAccelerator})
@@ -45,12 +45,13 @@ function select_strategy(strategy::DefaultStrategy, accelerators_vector::Vector{
     global current_strategy = strategy
     idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
     set_accelerator!(accelerators_vector[idx])
+    @debug "DefaultStrategy selected, using $(accelerators_vector[idx])"
 end
 
 function select_strategy(strategy::NoStrategy, accelerators_vector::Vector{AbstractAccelerator})
     # sort vector of accelerators to a specific order and then choose the first available
     global current_strategy = strategy
-
+    @debug "NoStrategy selected"
 end
 
 function select_strategy(strategy::LowestPowerStrategy, accelerators_vector::Vector{AbstractAccelerator})
@@ -119,6 +120,7 @@ end
 function find_accelerator()
     global accelerators_vector
     try
+        @debug "Trying to load accelerators..."
         Accelerators.load_all_accelerators(accelerators_vector)
     catch e 
         @error "Failed to load accelerators: $e"
@@ -282,7 +284,8 @@ function determine_accelerator()
     @debug "Accelerator determination stopped!"
 end
 
-function set_accelerator!(acc::AbstractAccelerator)
+# FIXME: this seems weird not to be in Accelerators.jl
+function set_accelerator!(acc::AbstractAccelerator) 
     @debug "Setting accelerator to: $(typeof(acc))"
     global accelerator = acc
 end
