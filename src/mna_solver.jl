@@ -233,8 +233,10 @@ function determine_accelerator()
             
             elseif varDict["allow_gpu"] && varDict["force_gpu"]
             
-                idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
-                typeof(accelerator) == CUDAccelerator || set_accelerator!(accelerators_vector[idx])
+                # idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
+                # typeof(accelerator) == CUDAccelerator || set_accelerator!(accelerators_vector[idx])
+                idx = findfirst(x -> typeof(x) == MetalAccelerator, accelerators_vector)
+                typeof(accelerator) == MetalAccelerator || set_accelerator!(accelerators_vector[idx])
 
             elseif varDict["allow_cpu"] && varDict["force_cpu"]
                 idx = findfirst(x -> x.name == "dummy_accelerator", accelerators_vector)
