@@ -66,6 +66,38 @@ end
 
 function estimate_flops(accelerator::MetalAccelerator) # returns flops in GFLOPs
     # TODO: Implement a proper estimation for Metal
+
+    n = 4096
+    trials = 5
+
+    A = Metal.mtl(ones(Float32, n, n))
+    B = Metal.mtl(ones(Float32, n, n))
+    C = Metal.mtl(zeros(Float32, n, n))
+
+    times = zeros(Float64, trials)
+
+    # warmup
+    mul!(C, A, B)
+
+    
+    for i in 1:trials
+        GC.gc()  # does this make sense? to avoid GC in during benchmark
+        times[i] = @elapsed begin
+            Metal.@sync mul!(C, A, B)
+        end
+    end
+
+    min_time = minimum(times)
+    flops = 2 * n^3
+    gflops = flops / (min_time * 1e9)
+
+    println("Best time: $(round(min_time, digits=6)) s")
+    println("GFLOPs: $(round(gflops, digits=2))")
+
+    return gflops
+
+    #return round(flops / 1e9, digits=2)
+    
 end
 
 function get_tdp(accelerator::MetalAccelerator)
