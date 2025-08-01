@@ -37,10 +37,10 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    #metal_flops = estimate_flops(MetalAccelerator())
-    #metal_power = get_tdp(MetalAccelerator())
-    #metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, metal_flops, metal_power))
-    metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, 1.0, 1.0))
+    metal_flops = estimate_flops(MetalAccelerator())
+    metal_power = get_tdp(MetalAccelerator())
+    metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, metal_flops, metal_power))
+    #metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, 1.0, 1.0))
     push!(accelerators, metal)
     @debug "MetalAccelerator discovered and added to accelerators vector"
 end
@@ -87,14 +87,11 @@ function estimate_flops(accelerator::MetalAccelerator) # returns flops in GFLOPs
         end
     end
 
-    min_time = minimum(times)
+    min_time = minimum(times)   # take the minimum time to avoid outliers
     flops = 2 * n^3
     gflops = flops / (min_time * 1e9)
 
-    println("Best time: $(round(min_time, digits=6)) s")
-    println("GFLOPs: $(round(gflops, digits=2))")
-
-    return gflops
+    return round(gflops, digits=2)
 
     #return round(flops / 1e9, digits=2)
     
@@ -102,6 +99,7 @@ end
 
 function get_tdp(accelerator::MetalAccelerator)
     # TODO: Implement a proper TDP retrieval for Metal
+    return 25.0
 end
 
 

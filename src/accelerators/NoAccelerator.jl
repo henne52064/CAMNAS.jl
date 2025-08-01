@@ -82,29 +82,32 @@ function estimate_flops(accelerator::NoAccelerator) # returns flops in GFLOPs
         else
             64  # fallback guess
         end
-    elseif Sys.isapple()
-        # Apple Silicon
 
-        return 1.0  # Apple Silicon does not support FLOPs estimation via lscpu
+        # estimate FLOPs per cycle per core
+        floats_per_vector = simd_bits / float_bits
+        flops_per_cycle_per_core = floats_per_vector * 2  # 1 FMA = 2 FLOPs
+
+        total_cores = cores_per_socket * sockets
+        clock_hz = max_mhz * 1e6
+
+
+        flops = total_cores * clock_hz * flops_per_cycle_per_core
+
+
+        return round(flops / 1e9, digits=2)
+
+    elseif Sys.isapple()
+        
+        gflops = cpupeakflops() / 1e9
+
+        return round(gflops, digits=2)
 
     else
         error("Unsupported OS for FLOPs estimation")
     end
 
 
-    # estimate FLOPs per cycle per core
-    floats_per_vector = simd_bits / float_bits
-    flops_per_cycle_per_core = floats_per_vector * 2  # 1 FMA = 2 FLOPs
-
-    total_cores = cores_per_socket * sockets
-    clock_hz = max_mhz * 1e6
-
-
-    flops = total_cores * clock_hz * flops_per_cycle_per_core
-
-    #println("Estimated FP64 peak: $(round(flops / 1e9, digits=2)) GFLOPs")
-
-    return round(flops / 1e9, digits=2)
+    
 
     
 
@@ -118,3 +121,29 @@ end
 
 # function mna_decomp(sparse_mat, accelerator::AbstractAccelerator) end
 # function mna_solve(my_system_matrix, rhs, accelerator::AbstractAccelerator) end
+
+"""
+This function is from the Metal.jl package on GitHub, but is not included when `using Metal`
+It calculates the peak FLOPs of the CPU by running a matrix multiplication benchmark.
+"""
+
+function cpupeakflops(; n::Integer=4096,    
+    n_batch::Integer=1,
+    inT::DataType=Float32,
+    outT::DataType=inT,
+    ntrials::Integer=4,
+    verify=true)
+    t = Base.zeros(Float64, ntrials)
+    n_batch == 1 || @warn "n_batch > 1 not supported for `mul!`, running with n_batch=1"
+    n_batch = 1
+    shape = (n, n)
+    for i=1:ntrials
+        c = zeros(outT, shape...)
+        a = ones(inT, shape...)
+        b = ones(inT, shape...)
+        t[i] = @elapsed mul!(c, a, b)
+        verify && @assert only(unique(Array(c))) == n
+    end
+
+    return n_batch*2*Float64(n)^3 / minimum(t)
+end
