@@ -12,10 +12,6 @@ struct MetalAccelerator <: AbstractAccelerator
         new(name, properties)
     end
 
-    # function MetalAccelerator()
-    #     new("metal", AcceleratorProperties(true, 1, 1.0, 1.0))
-    # end
-
     MetalAccelerator() = new()
 
 end

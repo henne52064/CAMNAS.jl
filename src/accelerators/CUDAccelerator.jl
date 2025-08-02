@@ -12,18 +12,10 @@ struct CUDAccelerator <: AbstractAccelerator
     properties::AcceleratorProperties
     device::CuDevice
 
-# FIXME: switch order of parameters to match other accelerator constructors
-    function CUDAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, floatmax()), dev::CuDevice)
+
+    function CUDAccelerator(name::String, dev::CuDevice, properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
         new(name, properties, dev)
     end
-
-    function CUDAccelerator(name::String, dev::CuDevice)
-        new(name, AcceleratorProperties(true, 1, 1.0, floatmax()), dev)
-    end
-
-    # function CUDAccelerator()
-    #     new("cuda", AcceleratorProperties(true, 1, 1.0, 1.0), CuDevice(0))
-    # end
 
     CUDAccelerator() = new()
 
@@ -59,7 +51,7 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         cuda_acc = CUDAccelerator(CUDA.name(dev), dev)
         power_limit = get_tdp(cuda_acc)
         cuda_flops = estimate_flops(dev)
-        cuda_acc = CUDAccelerator(CUDA.name(dev), AcceleratorProperties(true, 1, cuda_flops, power_limit), dev)
+        cuda_acc = CUDAccelerator(CUDA.name(dev), dev, AcceleratorProperties(true, 1, cuda_flops, power_limit))
         push!(accelerators, cuda_acc)
     end
     

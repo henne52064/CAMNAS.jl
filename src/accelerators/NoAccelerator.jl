@@ -10,11 +10,6 @@ struct NoAccelerator <: AbstractAccelerator
         new(name, properties)
     end
 
-    
-    # function NoAccelerator()
-    #     new("cpu", AcceleratorProperties(true, 1, 1.0, 1.0))
-    # end
-
     NoAccelerator() = new()
 
 end

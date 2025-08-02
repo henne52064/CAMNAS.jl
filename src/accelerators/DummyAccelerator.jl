@@ -9,12 +9,6 @@ struct DummyAccelerator <: AbstractAccelerator
         new(name, properties)
     end
 
-
-
-    # function DummyAccelerator()
-    #     new("", AcceleratorProperties(true, 1, 1.0, 1.0))
-    # end
-
     DummyAccelerator() = new()
 
 end
