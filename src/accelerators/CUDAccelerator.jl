@@ -76,23 +76,39 @@ end
 
 function estimate_flops(dev::CUDA.CuDevice)   # returns flops in GFLOPs
 
-    n_sms = CUDA.attribute(dev, CUDA.DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT)
-    clock_hz = CUDA.attribute(dev, CUDA.DEVICE_ATTRIBUTE_CLOCK_RATE) * 1000 # in kHz
+    @debug "Estimating FLOPs for CUDA device $(dev.handle) with benchmarking"
 
-    cc = CUDA.capability(dev)
-    cores_per_sm = get_cores_per_sm(cc)
+    # Set the CUDA device for benchmark
+    CUDA.device!(dev)
 
-    # compute theoretical FLOPs
-    total_cores = n_sms * cores_per_sm
-    flops = 2.0 * total_cores * clock_hz
+    n::Int = 4096
+    trials::Int = 5
+    
+    # Allocate GPU matrices
+    A = CUDA.ones(Float64, n, n)
+    B = CUDA.ones(Float64, n, n)
+    C = CUDA.zeros(Float64, n, n)
 
-    # println("Device: ", CUDA.name(dev))
-    # println("Compute Capability: ", cc)
-    # println("SMs: $n_sms, Cores/SM: $cores_per_sm, Total Cores: $total_cores")
-    # println("Clock: $(clock_hz / 1e6) MHz")
-    # println("Estimated FP64 peak: $(round(flops / 1e9, digits=2)) GFLOPs")
 
-    return round(flops / 1e9, digits=2)
+    times = zeros(Float64, trials)
+
+    # Warm-up
+    CUDA.@sync mul!(C, A, B)
+
+    for i in 1:trials
+        GC.gc()  
+        times[i] = @elapsed begin
+            CUDA.@sync mul!(C, A, B)
+        end
+    end
+
+    min_time = minimum(times)
+    flops = 2 * n^3
+    gflops = flops / (min_time * 1e9)
+
+
+    return round(gflops, digits=2)
+
 end
 
 function get_cores_per_sm(cc::VersionNumber)
