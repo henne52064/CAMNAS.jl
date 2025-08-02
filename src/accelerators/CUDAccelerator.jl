@@ -12,18 +12,20 @@ struct CUDAccelerator <: AbstractAccelerator
     properties::AcceleratorProperties
     device::CuDevice
 
-
-    function CUDAccelerator(name::String, properties::AcceleratorProperties, dev::CuDevice)
+# FIXME: switch order of parameters to match other accelerator constructors
+    function CUDAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, floatmax()), dev::CuDevice)
         new(name, properties, dev)
     end
 
     function CUDAccelerator(name::String, dev::CuDevice)
-        new(name, AcceleratorProperties(true, 1, 1.0, 1.0), dev)
+        new(name, AcceleratorProperties(true, 1, 1.0, floatmax()), dev)
     end
 
-    function CUDAccelerator()
-        new("cuda", AcceleratorProperties(true, 1, 1.0, 1.0), CuDevice(0))
-    end
+    # function CUDAccelerator()
+    #     new("cuda", AcceleratorProperties(true, 1, 1.0, 1.0), CuDevice(0))
+    # end
+
+    CUDAccelerator() = new()
 
 end
 
