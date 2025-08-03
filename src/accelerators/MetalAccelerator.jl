@@ -58,15 +58,16 @@ function check_accelerator(accelerators::Vector{AbstractAccelerator}, accelerato
     return true
 end
 
-function estimate_flops(accelerator::MetalAccelerator) # returns flops in GFLOPs
-    # TODO: Implement a proper estimation for Metal
+function estimate_flops(accelerator::MetalAccelerator;
+                        n::Int = 4096, 
+                        trials::Int = 5,
+                        inT::DataType=Float32,
+                        ouT::DataType=inT) # returns flops in GFLOPs
 
-    n = 4096
-    trials = 5
 
-    A = Metal.mtl(ones(Float32, n, n))
-    B = Metal.mtl(ones(Float32, n, n))
-    C = Metal.mtl(zeros(Float32, n, n))
+    A = Metal.mtl(ones(inT, n, n))
+    B = Metal.mtl(ones(inT, n, n))
+    C = Metal.mtl(zeros(ouT, n, n))
 
     times = zeros(Float64, trials)
 
@@ -99,7 +100,7 @@ end
 
 # Metal does not support ldiv or \, this is why we calculate with the inverse 
 # either we calculate 2 lu decompositions or we move the calculated lu decomposition back to cpu, 
-# to calculate the inverse only to then move the inverse back to the gpu
+# to calculate the inverse only to then move the inverse back to the gpu, because there is no inverse function in Metal.jl
 
 # this seems ineffective
 

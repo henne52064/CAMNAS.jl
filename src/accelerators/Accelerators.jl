@@ -107,8 +107,34 @@ function mna_solve(system_matrix::AbstractLUdecomp, rhs, accelerator::AbstractAc
     return system_matrix.lu_decomp \ rhs
 end
 
-function estimate_flops(accelerator::AbstractAccelerator)     # returns flops in GFLOPs
-    return 1    # in case of missing implementation return 1 Flop
+function estimate_flops(accelerator::AbstractAccelerator; 
+                        n::Int = 4096, 
+                        trials::Int = 5,
+                        inT::DataType=Float64,
+                        ouT::DataType=inT)
+
+    A = ones(inT, n, n)
+    B = ones(inT, n, n)
+    C = zeros(ouT, n, n)
+
+    times = zeros(Float64, trials)
+
+    # warmup
+    mul!(C, A, B)
+
+    for i in 1:trials
+        GC.gc() 
+        times[i] = @elapsed begin
+            @sync mul!(C, A, B)
+        end
+    end
+
+    min_time = minimum(times)   
+    flops = 2 * n^3
+    gflops = flops / (min_time * 1e9)
+
+    return round(gflops, digits=2)
+
 end
 
 function get_tdp(accelerator::AbstractAccelerator)

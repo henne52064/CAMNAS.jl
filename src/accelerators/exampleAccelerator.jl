@@ -70,7 +70,11 @@ Otherwise the code will not be optimized for the specific accelerator.
 Check for capabilities to run FP32 or FP64
 """
 
-function estimate_flops(accelerator::exampleAccelerator)
+function estimate_flops(accelerator::exampleAccelerator;
+                        n::Int = 4096, 
+                        trials::Int = 5,
+                        inT::DataType=Float64,
+                        ouT::DataType=inT)
 
 end
 
