@@ -163,9 +163,9 @@ function getFLOPs(accelerator::AbstractAccelerator)
             for line in eachline(file)
                 if occursin(accelerator.name, line)
                     parts = split(line)
-                    if length(parts) == 2
+                    if length(parts) >= 2
                         gflops = parse(Float64, parts[end]) 
-                        @debug "FLOPs found for $(accelerator.name): $gflops, skip calculation"
+                        @debug "GFLOPs found for $(accelerator.name): $gflops, skip calculation"
                         break
                     end
                 end
