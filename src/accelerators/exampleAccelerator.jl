@@ -44,8 +44,8 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    example_flops = estimate_flops(exampleAccelerator())
-    example_power = get_tdp(exampleAccelerator())
+    example_flops = getFLOPs(accelerator)
+    example_power = get_tdp(accelerator)
     example = exampleAccelerator("example", AcceleratorProperties(true, 1, example_flops, example_power))
     push!(accelerators, example)
 

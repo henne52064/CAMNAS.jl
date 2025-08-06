@@ -30,8 +30,9 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    metal_flops = estimate_flops(MetalAccelerator())
-    metal_power = get_tdp(MetalAccelerator())
+    #metal_flops = estimate_flops(MetalAccelerator())
+    metal_flops = getFLOPs(accelerator)
+    metal_power = get_tdp(accelerator)
     metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, metal_flops, metal_power))
     #metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, 1.0, 1.0))
     push!(accelerators, metal)

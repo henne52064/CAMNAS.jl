@@ -33,7 +33,7 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    dummy_accelerator_flops = estimate_flops(DummyAccelerator())
+    dummy_accelerator_flops = getFLOPs(accelerator)
     dummy_accelerator = DummyAccelerator("dummy_accelerator", AcceleratorProperties(true, 1, dummy_accelerator_flops, 95.0))
     push!(accelerators, dummy_accelerator)
 end

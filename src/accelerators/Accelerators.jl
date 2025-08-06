@@ -150,4 +150,46 @@ function set_acceleratordevice!(accelerator::AbstractAccelerator)
     @warn "set_acceleratordevice not implemented or necessary for $(typeof(accelerator))"
 end
 
+# Get the FLOPs of the accelerator from a file or benchmark and save to file.
+function getFLOPs(accelerator::AbstractAccelerator)
+    filepath = "$(@__DIR__)/.acceleratorFLOPs"
+    gflops = nothing
+
+    @debug "Checking for FLOPs in file: $filepath and file exists: $(isfile(filepath))"
+    
+
+    if isfile(filepath) # check if the file exists and try to read FLOPs
+        open(filepath, "r") do file
+            for line in eachline(file)
+                if occursin(accelerator.name, line)
+                    parts = split(line)
+                    if length(parts) == 2
+                        gflops = parse(Float64, parts[end]) 
+                        @debug "FLOPs found for $(accelerator.name): $gflops, skip calculation"
+                        break
+                    end
+                end
+            end
+        end
+        if gflops === nothing   # FLOPs not found for this accelerator
+            gflops = estimate_flops(accelerator)
+            open(filepath, "a") do file
+                println(file, "$(accelerator.name) $gflops")
+            end
+        end
+    else
+        gflops = estimate_flops(accelerator)
+        open(filepath, "w") do file
+            println(file, "$(accelerator.name) $gflops")  # create the file with initial value
+        end
+    end
+
+
+
+    return gflops
+
+end
+
+
+
 end

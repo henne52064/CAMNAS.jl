@@ -35,13 +35,8 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    if Sys.islinux() 
-        cpu_flops = estimate_flops(NoAccelerator(), inT=Float64)
-    elseif Sys.isapple()  
-        cpu_flops = estimate_flops(NoAccelerator(), inT=Float32)    # Apple Silicon uses Float32 for Metal.jl
-    end
-    
-    cpu_power = get_tdp(NoAccelerator())
+    cpu_flops = getFLOPs(accelerator)
+    cpu_power = get_tdp(accelerator)
     cpu = NoAccelerator("cpu", AcceleratorProperties(true, 1, cpu_flops, cpu_power))
     push!(accelerators, cpu)
 
