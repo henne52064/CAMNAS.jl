@@ -13,11 +13,11 @@ struct CUDAccelerator <: AbstractAccelerator
     device::CuDevice
 
 
-    function CUDAccelerator(name::String, dev::CuDevice, properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
+    function CUDAccelerator(name::String = "cuda", dev::CuDevice = CUDA.device() , properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
         new(name, properties, dev)
     end
 
-    CUDAccelerator() = new()
+    #CUDAccelerator() = new()
 
 end
 
@@ -38,7 +38,7 @@ end
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::CUDAccelerator) 
 
     try
-        has_driver(CUDAccelerator())
+        has_driver(accelerator)
     catch e
         @error "CUDA driver not found: $e"
         return
@@ -50,7 +50,7 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     for dev in devices 
         cuda_acc = CUDAccelerator(CUDA.name(dev), dev)
         power_limit = get_tdp(cuda_acc)
-        cuda_flops = estimate_flops(cuda_acc)
+        cuda_flops = getFLOPs(cuda_acc)
         cuda_acc = CUDAccelerator(CUDA.name(dev), dev, AcceleratorProperties(true, 1, cuda_flops, power_limit))
         push!(accelerators, cuda_acc)
     end
