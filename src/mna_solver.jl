@@ -231,16 +231,14 @@ function determine_accelerator()
                 idx = findfirst(x -> x.name == "cpu", accelerators_vector)
                 typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
             
-            elseif varDict["allow_gpu"] && varDict["force_gpu"]
+            elseif varDict["allow_gpu"] && varDict["force_gpu"] # anything but cpu is considered gpu
             
-                # idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
-                # typeof(accelerator) == CUDAccelerator || set_accelerator!(accelerators_vector[idx])
-                idx = findfirst(x -> typeof(x) == MetalAccelerator, accelerators_vector)
-                typeof(accelerator) == MetalAccelerator || set_accelerator!(accelerators_vector[idx])
-
+                idx = findfirst(x -> typeof(x) != NoAccelerator, accelerators_vector)   
+                set_accelerator!(accelerators_vector[idx])
+               
             elseif varDict["allow_cpu"] && varDict["force_cpu"]
-                idx = findfirst(x -> x.name == "dummy_accelerator", accelerators_vector)
-                typeof(accelerator) == DummyAccelerator || set_accelerator!(accelerators_vector[idx])
+                idx = findfirst(x -> x.name == "cpu", accelerators_vector)
+                typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
             end
             @debug "Forcing prioritized, using NoStrategy"
             select_strategy(NoStrategy(), accelerators_vector)
