@@ -80,9 +80,11 @@ function estimate_flops(accelerator::CUDAccelerator;
                         inT::DataType=Float64,
                         ouT::DataType=inT)   # returns flops in GFLOPs
 
-    @debug "Estimating FLOPs for CUDA device $(dev.handle) with benchmarking"
 
     dev::CUDA.CuDevice = accelerator.device
+    @debug "Estimating FLOPs for CUDA device $(dev.handle) with benchmarking"
+
+    
 
     # Set the CUDA device for benchmark
     CUDA.device!(dev)
