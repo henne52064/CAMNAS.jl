@@ -1,5 +1,5 @@
 export NoAccelerator, NoAccelerator_LUdecomp
-export discover_accelerator, check_accelerator, mna_decomp, mna_solve
+export discover_accelerator, mna_decomp, mna_solve
 
 struct NoAccelerator <: AbstractAccelerator 
     name::String
@@ -10,7 +10,6 @@ struct NoAccelerator <: AbstractAccelerator
         new(name, properties)
     end
 
-    #NoAccelerator() = new()
 
 end
 

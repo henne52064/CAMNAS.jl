@@ -1,5 +1,5 @@
 export CUDAccelerator, CUDAccelerator_LUdecomp
-export discover_accelerator, check_accelerator, mna_decomp, mna_solve
+export discover_accelerator, mna_decomp, mna_solve
 
 using CUDA
 using CUDA.CUSPARSE
@@ -116,19 +116,6 @@ function estimate_flops(accelerator::CUDAccelerator;
 
 end
 
-function get_cores_per_sm(cc::VersionNumber)
-    # Add lookup cores per sm, check with 'CUDA.capability( 'your_CUDA_device'  )' for capability
-    # and then in doc for num for 64FP cores
-    # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capabilities and
-    # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#arithmetic-instructions
-    if cc == v"6.1" return 4  # Tesla P40
-    elseif cc == v"7.5" return 32   # Tesla T4
-    elseif cc == v"8.6" return 32 # NVIDIA A2
-    else
-        @warn "Unknown compute capability $cc; assuming 2 cores/SM"
-        return 2
-    end
-end
 
 function get_tdp(accelerator::CUDAccelerator)
 
@@ -141,13 +128,6 @@ function get_tdp(accelerator::CUDAccelerator)
     return power_limit
 end
 
-# function set_accelerator!(acc::CUDAccelerator)
-#     @debug "THIS CUDA.device!() is called on $(Threads.threadid()) before: $(CUDA.device())"
-#     CUDA.device!(acc.device)
-#     @debug "Current CUDA device is $(CUDA.device())"
-#     CAMNAS.accelerator = acc
-
-# end
 
 function set_acceleratordevice!(acc::CUDAccelerator)
     # This function is used to set the CUDA device for the current thread

@@ -1,5 +1,5 @@
 export DummyAccelerator, DummyAccelerator_LUdecomp
-export discover_accelerator, check_accelerator, mna_decomp, mna_solve
+export discover_accelerator, mna_decomp, mna_solve
 
 struct DummyAccelerator <: AbstractAccelerator
     name::String
@@ -34,7 +34,8 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     end
 
     dummy_accelerator_flops = getFLOPs(accelerator)
-    dummy_accelerator = DummyAccelerator("dummy_accelerator", AcceleratorProperties(true, 1, dummy_accelerator_flops, 95.0))
+    dummy_accelerator_power = get_tdp(accelerator)
+    dummy_accelerator = DummyAccelerator("dummy_accelerator", AcceleratorProperties(true, 1, dummy_accelerator_flops, dummy_accelerator_power))
     push!(accelerators, dummy_accelerator)
 end
 
@@ -50,15 +51,3 @@ function get_tdp(accelerator::DummyAccelerator) # returns flops in GFLOPs
     return 400.0    #   choose an arbitrary powerconsumption value for dummyaccelerator
 
 end
-
-
-
-# function mna_solve(my_system_matrix, rhs, accelerator::AbstractAccelerator) end
-
-
-
-# function mna_decomp(sparse_mat::DummyAccelerator_LUdecomp, accelerator::DummyAccelerator)
-#     lu_decomp = SparseArrays.lu(sparse_mat) |> NoAccelerator_LUdecomp
-#     @debug "Dummy"
-#     return lu_decomp
-# end

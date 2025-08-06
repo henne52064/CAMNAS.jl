@@ -139,22 +139,6 @@ function find_accelerator()
     @debug "Present accelerators: $([a.name for a in accelerators_vector])"
 
     
-
-    # if varDict["allow_gpu"] && has_cuda()
-    #     @debug "CUDA available! Try using CUDA accelerator..."
-    #     try
-    #         CuArray(ones(1))
-    #         accelerator = CUDAccelerator()
-    #         @info "[CAMNAS] CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
-    #     catch e
-    #         @warn "CUDA driver available but could not load CuArrays package."
-    #     end
-    # elseif !@isdefined accelerator
-    #     @info "[CAMNAS] No accelerator found."
-    #     accelerator = NoAccelerator()
-    # end
-    # @debug "Accelerator type is $(typeof(accelerator))"
-    # return accelerator
 end
 
 
@@ -294,11 +278,8 @@ end
 function mna_init(sparse_mat)
     global varDict = parse_env_vars()
     create_env_file()
-    #Accelerators.load_all_accelerators(accelerators_vector)
 
     systemcheck()
-    #global accelerators = [k for (k, v) in acceleratorPropertiesDict if v.availability]
-    #@debug accelerators_vector
     global run = true
     global csr_mat = sparse_mat
 
@@ -358,12 +339,6 @@ function mna_decomp(sparse_mat)
 
     decomps = Vector{AbstractLUdecomp}()
 
-    # FIXME: This is a workaround, getting rid of CUDA specific code would be better
-    # if typeof(accelerator) == CUDAccelerator
-    #     @debug "Setting CUDA device to $(accelerator.device) on Thread $(Threads.threadid())"
-    #     CUDA.device!(accelerator.device)
-    # end
-
     Accelerators.set_acceleratordevice!(accelerator)
 
     if varDict["runtime_switch"]
@@ -407,14 +382,6 @@ function mna_solve(my_system_matrix, rhs)
         sys_mat = my_system_matrix[idx]
     end
 
-   
-
-
-    # # FIXME: This is a workaround, getting rid of CUDA specific code would be better
-    # if typeof(accelerator) == CUDAccelerator
-    #     @debug "Setting CUDA device to $(accelerator.device) on Thread $(Threads.threadid())"
-    #     CUDA.device!(accelerator.device)
-    # end
     Accelerators.set_acceleratordevice!(accelerator)        # sets the ACTUAL physical accelerator device
 
     @debug "Using system matrix of type $(typeof(sys_mat)) for solving."

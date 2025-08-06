@@ -2,7 +2,7 @@ module Accelerators
 import ..CAMNAS
 
 export AbstractAccelerator, AcceleratorProperties, AbstractLUdecomp
-export discover_accelerator, check_accelerator, mna_decomp, mna_solve, estimate_flops
+export discover_accelerator, mna_decomp, mna_solve, estimate_flops
 
 using SparseArrays
 using LinearAlgebra
@@ -98,7 +98,6 @@ end
 
 function mna_decomp(sparse_mat, accelerator::AbstractAccelerator)
     lu_decomp = SparseArrays.lu(sparse_mat) |> NoAccelerator_LUdecomp
-    #@debug "CPU $lu_decomp"
     return lu_decomp
 end
 

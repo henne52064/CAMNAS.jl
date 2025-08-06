@@ -1,5 +1,5 @@
 export MetalAccelerator, MetalAccelerator_LUdecomp
-export discover_accelerator, check_accelerator, mna_decomp, mna_solve
+export discover_accelerator, mna_decomp, mna_solve
 
 using Metal
 
@@ -30,11 +30,9 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    #metal_flops = estimate_flops(MetalAccelerator())
     metal_flops = getFLOPs(accelerator)
     metal_power = get_tdp(accelerator)
     metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, metal_flops, metal_power))
-    #metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, 1.0, 1.0))
     push!(accelerators, metal)
     @debug "MetalAccelerator discovered and added to accelerators vector"
 end
@@ -49,14 +47,6 @@ function has_driver(accelerator::MetalAccelerator)
     return true
 end
 
-function check_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::MetalAccelerator)
-
-    if !has_driver(accelerator)
-        return false
-    end
-
-    return true
-end
 
 function estimate_flops(accelerator::MetalAccelerator;
                         n::Int = 4096, 
