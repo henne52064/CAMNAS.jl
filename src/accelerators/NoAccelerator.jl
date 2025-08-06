@@ -6,11 +6,11 @@ struct NoAccelerator <: AbstractAccelerator
     properties::AcceleratorProperties
     
 
-    function NoAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
+    function NoAccelerator(name::String = "cpu", properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
         new(name, properties)
     end
 
-    NoAccelerator() = new()
+    #NoAccelerator() = new()
 
 end
 
@@ -25,7 +25,7 @@ end
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::NoAccelerator)
     
     try
-        has_driver(NoAccelerator())
+        has_driver(accelerator)
     catch e
         @error "NoAccelerator driver not found: $e"
         return

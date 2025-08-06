@@ -5,11 +5,10 @@ struct DummyAccelerator <: AbstractAccelerator
     name::String
     properties::AcceleratorProperties
 
-    function DummyAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, 1.0))
+    function DummyAccelerator(name::String = "dummy_accelerator", properties=AcceleratorProperties(true, 1, 1.0, 1.0))
         new(name, properties)
     end
 
-    DummyAccelerator() = new()
 
 end
 
@@ -24,7 +23,7 @@ end
 function discover_accelerator(accelerators::Vector{AbstractAccelerator}, accelerator::DummyAccelerator) 
     
     try
-        has_driver(DummyAccelerator())
+        has_driver(accelerator)
     catch e
         @error "Dummy driver not found: $e"
         return

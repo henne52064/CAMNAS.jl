@@ -13,11 +13,11 @@ struct exampleAccelerator <: AbstractAccelerator
     properties::AcceleratorProperties
 
 
-    function exampleAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
+    function exampleAccelerator(name::String = "example", properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
         new(name, properties)
     end
 
-    exampleAccelerator() = new()
+    
 
 end
 

@@ -8,11 +8,10 @@ struct MetalAccelerator <: AbstractAccelerator
     properties::AcceleratorProperties
 
 
-    function MetalAccelerator(name::String, properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
+    function MetalAccelerator(name::String = "metal", properties=AcceleratorProperties(true, 1, 1.0, floatmax()))
         new(name, properties)
     end
 
-    MetalAccelerator() = new()
 
 end
 
