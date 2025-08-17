@@ -4,6 +4,7 @@ authors = ["Felix Wege <fwege@eonerc.rwth-aachen.de>"]
 version = "0.1.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 CUSOLVERRF = "a8cc9031-bad2-4722-94f5-40deabb4245c"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
@@ -23,6 +24,7 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+BenchmarkTools = "1.6.0"
 Metal = "1.6.1"
 Printf = "1.11.0"
 Revise = "3.7.6"
