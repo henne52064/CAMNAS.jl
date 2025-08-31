@@ -82,13 +82,13 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug @isdefined system_matrix
     (@isdefined system_matrix) || ( error("System matrix not initialized! Call init or decomp first!"); return -1 )
     
-    if typeof(system_matrix[1]) == DummyAccelerator_LUdecomp
-        @debug typeof(system_matrix[2])
-        @debug dump(system_matrix)
-        lu_decomp = transfer_LU_CUDA2CPU(system_matrix[2])
-        system_matrix[1] = lu_decomp
-        @debug "This is cpu lu_decomp $(system_matrix[1])"
-    end
+    # if typeof(system_matrix[1]) == DummyAccelerator_LUdecomp
+    #     @debug typeof(system_matrix[2])
+    #     @debug dump(system_matrix)
+    #     lu_decomp = transfer_LU_CUDA2CPU(system_matrix[2])
+    #     system_matrix[1] = lu_decomp
+    #     @debug "This is cpu lu_decomp $(system_matrix[1])"
+    # end
 
     dim = size(system_matrix[1].lu_decomp)[1] # Matrix is quadratic, so we can use m or n
     rhs = unsafe_wrap(Array, rhs_values_ptr, dim)

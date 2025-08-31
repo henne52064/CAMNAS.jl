@@ -43,7 +43,7 @@ end
 function select_strategy(strategy::DefaultStrategy, accelerators_vector::Vector{AbstractAccelerator})
     # sort vector of accelerators to a specific order and then choose the first available
     global current_strategy = strategy
-    idx = findfirst(x -> typeof(x) == CUDAccelerator, accelerators_vector)
+    idx = 1         # choose first accelerator from the available accelerators_vector
     set_accelerator!(accelerators_vector[idx])
     @debug "DefaultStrategy selected, using $(accelerators_vector[idx])"
 end
@@ -367,8 +367,7 @@ function mna_solve(my_system_matrix, rhs)
     (haskey(ENV, "JL_MNA_PRINT_ACCELERATOR") && ENV["JL_MNA_PRINT_ACCELERATOR"] == "true" ?
         println(typeof(accelerator))
         : nothing)
-    #(typeof(accelerator) == CUDAccelerator) ? sys_mat = my_system_matrix[2] : sys_mat = my_system_matrix[1]
-
+    
     idx = findfirst(x -> typeof(x) == get_ludecomp_type(accelerator), my_system_matrix) 
 
     
