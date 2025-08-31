@@ -30,9 +30,9 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    metal_flops = getFLOPs(accelerator)
+    metal_perf = getPerformanceIndicator(accelerator)
     metal_power = get_tdp(accelerator)
-    metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, metal_flops, metal_power))
+    metal = MetalAccelerator("metal", AcceleratorProperties(true, 1, metal_perf, metal_power))
     push!(accelerators, metal)
     @debug "MetalAccelerator discovered and added to accelerators vector"
 end
@@ -48,11 +48,11 @@ function has_driver(accelerator::MetalAccelerator)
 end
 
 
-function estimate_flops(accelerator::MetalAccelerator;
+function estimate_perf(accelerator::MetalAccelerator;
                         n::Int = 4096, 
                         trials::Int = 5,
                         inT::DataType=Float32,
-                        ouT::DataType=inT) # returns flops in GFLOPs
+                        ouT::DataType=inT) # returns performance indicator
 
 
     A = Metal.mtl(ones(inT, n, n))

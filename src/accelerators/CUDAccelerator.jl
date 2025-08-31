@@ -50,8 +50,8 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     for dev in devices 
         cuda_acc = CUDAccelerator(CUDA.name(dev), dev)
         power_limit = get_tdp(cuda_acc)
-        cuda_flops = getFLOPs(cuda_acc)
-        cuda_acc = CUDAccelerator(CUDA.name(dev), dev, AcceleratorProperties(true, 1, cuda_flops, power_limit))
+        cuda_perf = getPerformanceIndicator(cuda_acc)
+        cuda_acc = CUDAccelerator(CUDA.name(dev), dev, AcceleratorProperties(true, 1, cuda_perf, power_limit))
         push!(accelerators, cuda_acc)
     end
     
@@ -74,7 +74,7 @@ function mna_solve(system_matrix::CUDAccelerator_LUdecomp, rhs, accelerator::CUD
     return Array(rhs_d)
 end
 
-function estimate_flops(accelerator::CUDAccelerator;
+function estimate_perf(accelerator::CUDAccelerator;
                         n::Int = 4096, 
                         trials::Int = 5,
                         inT::DataType=Float64,
@@ -82,7 +82,7 @@ function estimate_flops(accelerator::CUDAccelerator;
 
 
     dev::CUDA.CuDevice = accelerator.device
-    @debug "Estimating FLOPs for CUDA device $(dev.handle) with benchmarking"
+    @debug "Estimating performance Indication for CUDA device $(dev.handle) with benchmarking"
 
     
 

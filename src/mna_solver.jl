@@ -21,7 +21,7 @@ abstract type AbstractSelectionStrategy end
 
 struct DefaultStrategy <: AbstractSelectionStrategy end #choose first accelerator from a defined order
 struct LowestPowerStrategy <: AbstractSelectionStrategy end
-struct HighestFlopsStrategy <: AbstractSelectionStrategy end
+struct HighestPerfStrategy <: AbstractSelectionStrategy end
 struct NoStrategy <: AbstractSelectionStrategy end
 
 
@@ -85,11 +85,11 @@ function select_strategy(strategy::LowestPowerStrategy, accelerators_vector::Vec
 
 end
 
-function select_strategy(strategy::HighestFlopsStrategy, accelerators_vector::Vector{AbstractAccelerator})
+function select_strategy(strategy::HighestPerfStrategy, accelerators_vector::Vector{AbstractAccelerator})
     global accelerators_vector
     global current_strategy = strategy
     # available = filter(x -> x.properties.availability, accelerators_vector)
-    # value, index = findmax(x -> x.properties.flops, available)
+    # value, index = findmax(x -> x.properties.perf, available)
     allowed = Vector{AbstractAccelerator}()
 
     if !varDict["allow_gpu"] && !varDict["allow_cpu"]
@@ -109,7 +109,7 @@ function select_strategy(strategy::HighestFlopsStrategy, accelerators_vector::Ve
         return nothing
     end
 
-    value, index = findmax(x -> x.properties.flops, allowed)
+    value, index = findmax(x -> x.properties.performanceIndicator, allowed)
     set_accelerator!(allowed[index])
     
 

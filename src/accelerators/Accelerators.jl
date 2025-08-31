@@ -2,7 +2,7 @@ module Accelerators
 import ..CAMNAS
 
 export AbstractAccelerator, AcceleratorProperties, AbstractLUdecomp
-export discover_accelerator, mna_decomp, mna_solve, estimate_flops
+export discover_accelerator, mna_decomp, mna_solve, estimate_perf
 
 using SparseArrays
 using LinearAlgebra
@@ -14,12 +14,12 @@ abstract type AbstractLUdecomp end
 struct AcceleratorProperties
     availability::Bool
     priority::Int64
-    flops::Float64      # in GFLOPs
+    performanceIndicator::Float64      
     power_watts::Float64            # max Power usage
-    energy_efficiency::Float64      # flops/W
+    energy_efficiency::Float64      # performanceIndicator/W
 
-    function AcceleratorProperties(availability::Bool, priority::Int64, flops::Float64, power_watts::Float64) 
-        new(availability, priority, flops, power_watts, round(flops/power_watts, digits=4))
+    function AcceleratorProperties(availability::Bool, priority::Int64, performanceIndicator::Float64, power_watts::Float64) 
+        new(availability, priority, performanceIndicator, power_watts, round(performanceIndicator/power_watts, digits=4))
     end
 
     function AcceleratorProperties()
@@ -106,7 +106,7 @@ function mna_solve(system_matrix::AbstractLUdecomp, rhs, accelerator::AbstractAc
     return system_matrix.lu_decomp \ rhs
 end
 
-function estimate_flops(accelerator::AbstractAccelerator; 
+function estimate_perf(accelerator::AbstractAccelerator; 
                         n::Int = 4096, 
                         trials::Int = 5,
                         inT::DataType=Float64,
@@ -150,11 +150,11 @@ function set_acceleratordevice!(accelerator::AbstractAccelerator)
 end
 
 # Get the FLOPs of the accelerator from a file or benchmark and save to file.
-function getFLOPs(accelerator::AbstractAccelerator)
-    filepath = "$(@__DIR__)/.acceleratorFLOPs"
-    gflops = nothing
+function getPerformanceIndicator(accelerator::AbstractAccelerator)
+    filepath = "$(@__DIR__)/.acceleratorPerformanceIndicator"
+    perf = nothing
 
-    @debug "Checking for FLOPs in file: $filepath and file exists: $(isfile(filepath))"
+    @debug "Checking for performance in file: $filepath and file exists: $(isfile(filepath))"
     
 
     if isfile(filepath) # check if the file exists and try to read FLOPs
@@ -163,29 +163,29 @@ function getFLOPs(accelerator::AbstractAccelerator)
                 if occursin(accelerator.name, line)
                     parts = split(line)
                     if length(parts) >= 2
-                        gflops = parse(Float64, parts[end]) 
-                        @debug "GFLOPs found for $(accelerator.name): $gflops, skip calculation"
+                        perf = parse(Float64, parts[end]) 
+                        @debug "Performance Infication found for $(accelerator.name): $perf, skip benchmarking"
                         break
                     end
                 end
             end
         end
-        if gflops === nothing   # FLOPs not found for this accelerator
-            gflops = estimate_flops(accelerator)
+        if perf === nothing   # Performance Infication not found for this accelerator
+            perf = estimate_perf(accelerator)
             open(filepath, "a") do file
-                println(file, "$(accelerator.name) $gflops")
+                println(file, "$(accelerator.name) $perf")
             end
         end
     else
-        gflops = estimate_flops(accelerator)
+        perf = estimate_perf(accelerator)
         open(filepath, "w") do file
-            println(file, "$(accelerator.name) $gflops")  # create the file with initial value
+            println(file, "$(accelerator.name) $perf")  # create the file with initial value
         end
     end
 
 
 
-    return gflops
+    return perf
 
 end
 

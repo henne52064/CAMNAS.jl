@@ -33,7 +33,7 @@ end
 
 """ discover_accelerator function
 Check if accelerator is already in global `accelerators` vector. 
-Call `estimate_flops` and `get_tdp` function.
+Call `estimate_perf` and `get_tdp` function.
 Create new exampleAccelerator struct object and push it into the `accelerators` vector.
 
 If there are multiple accelerator of the same type, make sure to discover all of them.
@@ -44,9 +44,9 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    example_flops = getFLOPs(accelerator)
+    example_perf = getPerformanceIndicator(accelerator)
     example_power = get_tdp(accelerator)
-    example = exampleAccelerator("example", AcceleratorProperties(true, 1, example_flops, example_power))
+    example = exampleAccelerator("example", AcceleratorProperties(true, 1, example_perf, example_power))
     push!(accelerators, example)
 
 end
@@ -60,17 +60,15 @@ function has_driver(accelerator::exampleAccelerator)
     return false 
 end
 
-""" estimate_flops function
-Estimate the GFLOPs of the exampleAccelerator by running a simple matrix multiplication benchmark.
+""" estimate_perffunction
+Estimate the performance Indicator of the exampleAccelerator by running a simple matrix multiplication benchmark.
 
 Overload the function from AbstractAccelerator and adjust the Matrices A, B and C to the accelerator specific type of matrix 
     (e.g. MtlMatrix for Metal or CuArray for CUDA).
-Use the accelerator specific @sync macro to ensure the best benchmark accuracy. (e.g. Metal.@sync)
-Otherwise the code will not be optimized for the specific accelerator.
 Check for capabilities to run FP32 or FP64
 """
 
-function estimate_flops(accelerator::exampleAccelerator;
+function estimate_perf(accelerator::exampleAccelerator;
                         n::Int = 4096, 
                         trials::Int = 5,
                         inT::DataType=Float64,

@@ -33,16 +33,16 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    dummy_accelerator_flops = getFLOPs(accelerator)
+    dummy_accelerator_perf = getPerformanceIndicator(accelerator)
     dummy_accelerator_power = get_tdp(accelerator)
-    dummy_accelerator = DummyAccelerator("dummy_accelerator", AcceleratorProperties(true, 1, dummy_accelerator_flops, dummy_accelerator_power))
+    dummy_accelerator = DummyAccelerator("dummy_accelerator", AcceleratorProperties(true, 1, dummy_accelerator_perf, dummy_accelerator_power))
     push!(accelerators, dummy_accelerator)
 end
 
 # same implementation as NoAccelerator
-function estimate_flops(accelerator::DummyAccelerator) # returns flops in GFLOPs
+function estimate_perf(accelerator::DummyAccelerator) # returns flops in GFLOPs
     
-    return 400.0    #   choose an arbitrary FLOPs value for dummyaccelerator
+    return 400.0    #   choose an arbitrary performance value for dummyaccelerator
 
 end
 

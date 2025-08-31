@@ -34,9 +34,9 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
         return
     end
 
-    cpu_flops = getFLOPs(accelerator)
+    cpu_perf = getPerformanceIndicator(accelerator)
     cpu_power = get_tdp(accelerator)
-    cpu = NoAccelerator("cpu", AcceleratorProperties(true, 1, cpu_flops, cpu_power))
+    cpu = NoAccelerator("cpu", AcceleratorProperties(true, 1, cpu_perf, cpu_power))
     push!(accelerators, cpu)
 
 end
