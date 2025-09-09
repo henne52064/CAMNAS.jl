@@ -6,6 +6,7 @@ export discover_accelerator, mna_decomp, mna_solve, estimate_perf
 
 using SparseArrays
 using LinearAlgebra
+using BenchmarkTools
 # Hardwareawareness
 abstract type AbstractAccelerator end
 
@@ -107,7 +108,7 @@ function mna_solve(system_matrix::AbstractLUdecomp, rhs, accelerator::AbstractAc
 end
 
 function estimate_perf(accelerator::AbstractAccelerator; 
-                        n::Int = 4096, 
+                        n::Int = 8192, 
                         trials::Int = 5,
                         inT::DataType=Float64,
                         ouT::DataType=inT)
@@ -116,23 +117,16 @@ function estimate_perf(accelerator::AbstractAccelerator;
     B = ones(inT, n, n)
     C = zeros(ouT, n, n)
 
-    times = zeros(Float64, trials)
+    # TODO: How can we create big random matrices where LU decomp exists?
 
-    # warmup
-    mul!(C, A, B)
+    # idea: do not benchmark matrix multiplication, but LU decomp and solve step and calculate performance indicator from that
 
-    for i in 1:trials
-        GC.gc() 
-        times[i] = @elapsed begin
-            @sync mul!(C, A, B)
-        end
-    end
+    min_time = @belapsed mul!($C, $A, $B)
 
-    min_time = minimum(times)   
-    flops = 2 * n^3
-    gflops = flops / (min_time * 1e9)
+    flops = 2 * n^3 - n^2
+    perfIndicator = round(flops / (min_time * 1e9), digits=2) 
 
-    return round(gflops, digits=2)
+    return perfIndicator
 
 end
 

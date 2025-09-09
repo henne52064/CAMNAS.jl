@@ -15,7 +15,7 @@ struct MetalAccelerator <: AbstractAccelerator
 
 end
 
-# FIXME: DenseMatrix since Sparse Matrix support for Metal.jl is not implemented yet.
+# DenseMatrix since Sparse Matrix support for Metal.jl is not implemented yet.
 
 struct MetalAccelerator_LUdecomp <: AbstractLUdecomp 
     lu_decomp::LU{Float32, MtlMatrix{Float32, Metal.PrivateStorage}, MtlVector{UInt32, Metal.PrivateStorage}}
@@ -59,27 +59,17 @@ function estimate_perf(accelerator::MetalAccelerator;
     B = Metal.mtl(ones(inT, n, n))
     C = Metal.mtl(zeros(ouT, n, n))
 
-    times = zeros(Float64, trials)
-
-    # warmup
-    mul!(C, A, B)
-
     
-    for i in 1:trials
-        GC.gc()  # does this make sense? to avoid GC in during benchmark
-        times[i] = @elapsed begin
-            Metal.@sync mul!(C, A, B)
-        end
-    end
+    
+    min_time = @belapsed Metal.@sync mul!(C, A, B)
 
-    min_time = minimum(times)   # take the minimum time to avoid outliers
-    flops = 2 * n^3
+
+    flops = 2 * n^3 - n^2
     gflops = flops / (min_time * 1e9)
 
-    return round(gflops, digits=2)
+    perfIndicator = round(gflops, digits=2)
 
-    #return round(flops / 1e9, digits=2)
-    
+    return perfIndicator
 end
 
 function get_tdp(accelerator::MetalAccelerator)
@@ -117,7 +107,7 @@ function mna_solve(system_matrix::MetalAccelerator_LUdecomp, rhs, accelerator::M
 # FIXME:
 # are dpsim matrices always nonsingular?
 
-    # GPU solve step: apparently not numerically stable, not as performant as \ or ldiv
+    # GPU solve step: not numerically stable, not as performant as \ or ldiv
     
     rhs_mtl = Metal.mtl(rhs)    
     lhs_mtl = Metal.mtl(system_matrix.inverse.P) * (system_matrix.inverse.L * (system_matrix.inverse.U * rhs_mtl))

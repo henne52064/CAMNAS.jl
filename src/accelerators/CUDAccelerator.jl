@@ -17,7 +17,6 @@ struct CUDAccelerator <: AbstractAccelerator
         new(name, properties, dev)
     end
 
-    #CUDAccelerator() = new()
 
 end
 
@@ -45,7 +44,7 @@ function discover_accelerator(accelerators::Vector{AbstractAccelerator}, acceler
     end
 
     devices = collect(CUDA.devices())   # Vector of CUDA devices 
-
+    @debug "Found $(length(devices)) CUDA devices"
 
     for dev in devices 
         cuda_acc = CUDAccelerator(CUDA.name(dev), dev)
@@ -75,7 +74,7 @@ function mna_solve(system_matrix::CUDAccelerator_LUdecomp, rhs, accelerator::CUD
 end
 
 function estimate_perf(accelerator::CUDAccelerator;
-                        n::Int = 4096, 
+                        n::Int = 8192, 
                         trials::Int = 5,
                         inT::DataType=Float64,
                         ouT::DataType=inT)   # returns flops in GFLOPs
@@ -83,8 +82,6 @@ function estimate_perf(accelerator::CUDAccelerator;
 
     dev::CUDA.CuDevice = accelerator.device
     @debug "Estimating performance Indication for CUDA device $(dev.handle) with benchmarking"
-
-    
 
     # Set the CUDA device for benchmark
     CUDA.device!(dev)
@@ -94,26 +91,15 @@ function estimate_perf(accelerator::CUDAccelerator;
     B = CUDA.ones(inT, n, n)
     C = CUDA.zeros(ouT, n, n)
 
+    flops = 2 * n^3 - n^2
 
-    times = zeros(Float64, trials)
+    min_time = @belapsed CUDA.@sync mul!($C, $A, $B) 
 
-    # Warm-up
-    CUDA.@sync mul!(C, A, B)
-
-    for i in 1:trials
-        GC.gc()  
-        times[i] = @elapsed begin
-            CUDA.@sync mul!(C, A, B)
-        end
-    end
-
-    min_time = minimum(times)
-    flops = 2 * n^3
     gflops = flops / (min_time * 1e9)
 
-
-    return round(gflops, digits=2)
-
+    perfIndicator = round(gflops, digits=2)
+  
+    return perfIndicator
 end
 
 

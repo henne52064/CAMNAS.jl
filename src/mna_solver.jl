@@ -205,64 +205,67 @@ function determine_accelerator()
         val === nothing ? break : nothing
 
         # Currently, force statments are the strongest, then consider strategies
+        if varDict["runtime_switch"]
+            if varDict["force_cpu"] || varDict["force_gpu"]
 
-        if varDict["force_cpu"] || varDict["force_gpu"]
+                # FORCING
+                if varDict["force_cpu"] && varDict["force_gpu"]
+                
+                    @debug "Conflict: Both 'force_cpu' and 'force_gpu' are set. Only one can be forced."
+                    idx = findfirst(x -> x.name == "cpu", accelerators_vector)
+                    typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
+                
+                elseif varDict["allow_gpu"] && varDict["force_gpu"] # anything but cpu is considered gpu
+                
+                    idx = findfirst(x -> typeof(x) != NoAccelerator, accelerators_vector)   
+                    set_accelerator!(accelerators_vector[idx])
+                
+                elseif varDict["allow_cpu"] && varDict["force_cpu"]
+                    idx = findfirst(x -> x.name == "cpu", accelerators_vector)
+                    typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
+                end
+                @debug "Forcing prioritized, using NoStrategy"
+                select_strategy(NoStrategy(), accelerators_vector)
 
-            # FORCING
-            if varDict["force_cpu"] && varDict["force_gpu"]
-            
-                @debug "Conflict: Both 'force_cpu' and 'force_gpu' are set. Only one can be forced."
-                idx = findfirst(x -> x.name == "cpu", accelerators_vector)
-                typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
-            
-            elseif varDict["allow_gpu"] && varDict["force_gpu"] # anything but cpu is considered gpu
-            
+            elseif varDict["allow_strategies"]
+                # STRATEGIES
+                if varDict["highest_flop_strategy"] && varDict["lowest_power_strategy"]
+                    @debug "Too many Stragegies set! Only one can be used at a time."
+                    select_strategy(DefaultStrategy(), accelerators_vector)    
+
+                elseif varDict["highest_flop_strategy"]
+                    @debug "Selected HighestPerfStrategy"
+                    select_strategy(HighestPerfStrategy(), accelerators_vector)
+                
+                elseif varDict["lowest_power_strategy"] 
+                    @debug "Selected LowestPowerStrategy"
+                    select_strategy(LowestPowerStrategy(), accelerators_vector)
+                else
+                    @debug "Selected DefaultStrategy"
+                    select_strategy(DefaultStrategy(), accelerators_vector)
+                end
+            elseif varDict["allow_gpu"] 
                 idx = findfirst(x -> typeof(x) != NoAccelerator, accelerators_vector)   
                 set_accelerator!(accelerators_vector[idx])
-               
-            elseif varDict["allow_cpu"] && varDict["force_cpu"]
+                @debug "No strategy selected, using NoStrategy"
+                select_strategy(NoStrategy(), accelerators_vector)
+            
+            elseif varDict["allow_cpu"]
                 idx = findfirst(x -> x.name == "cpu", accelerators_vector)
                 typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
-            end
-            @debug "Forcing prioritized, using NoStrategy"
-            select_strategy(NoStrategy(), accelerators_vector)
-
-        elseif varDict["allow_strategies"]
-            # STRATEGIES
-            if varDict["highest_flop_strategy"] && varDict["lowest_power_strategy"]
-                @debug "Too many Stragegies set! Only one can be used at a time."
-                select_strategy(DefaultStrategy(), accelerators_vector)    
-
-            elseif varDict["highest_flop_strategy"]
-                @debug "Selected HighestFlopsStrategy"
-                select_strategy(HighestFlopsStrategy(), accelerators_vector)
+                @debug "No strategy selected, using NoStrategy"
+                select_strategy(NoStrategy(), accelerators_vector)
             
-            elseif varDict["lowest_power_strategy"] 
-                @debug "Selected LowestPowerStrategy"
-                select_strategy(LowestPowerStrategy(), accelerators_vector)
             else
-                @debug "Selected DefaultStrategy"
-                select_strategy(DefaultStrategy(), accelerators_vector)
+                @debug "Conflict: Nothing is allowed. THIS DOESNT MAKE SENSE!"
             end
-        elseif varDict["allow_gpu"] 
-            idx = findlast(x -> typeof(x) == CUDAccelerator, accelerators_vector)
-            typeof(accelerator) == CUDAccelerator || set_accelerator!(accelerators_vector[idx])
-            @debug "No strategy selected, using NoStrategy"
-            select_strategy(NoStrategy(), accelerators_vector)
-        
-        elseif varDict["allow_cpu"]
-            idx = findfirst(x -> x.name == "cpu", accelerators_vector)
-            typeof(accelerator) == NoAccelerator || set_accelerator!(accelerators_vector[idx])
-            @debug "No strategy selected, using NoStrategy"
-            select_strategy(NoStrategy(), accelerators_vector)
-        
-        else
-            @debug "Conflict: Nothing is allowed. THIS DOESNT MAKE SENSE!"
-        end
 
-        @info "[CAMNAS] Currently used accelerator: $accelerator" 
-        if varDict["allow_strategies"]
-            @info "[CAMNAS] Currently used strategy: $(typeof(current_strategy))"
+            @info "[CAMNAS] Currently used accelerator: $accelerator" 
+            if varDict["allow_strategies"]
+                @info "[CAMNAS] Currently used strategy: $(typeof(current_strategy))"
+            end
+        else
+            @debug "Runtime switch is disabled, Accelerator will not be changed."
         end
     end
     @debug "Accelerator determination stopped!"
