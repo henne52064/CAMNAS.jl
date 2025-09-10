@@ -195,6 +195,8 @@ function determine_accelerator()
     while true
         val = take!(system_environment)
         @debug "Received new system environment!: $val"
+        val === nothing ? break : nothing
+        
         evaluateSystemEnv(val)
         # for line in split(val, '\n')[2:end]
         #     if length(line) == 0
@@ -287,9 +289,11 @@ function determine_accelerator()
 end
 
 function evaluateSystemEnv(content)
+    first_run = false
     if(content === nothing)
         @debug "Setting up: Reading ENV for the first time"
         file_system_env = (@__DIR__)*"/system.env"
+        first_run = true
         content = read(file_system_env, String)
     end
 
@@ -314,10 +318,10 @@ function evaluateSystemEnv(content)
     @debug "$varDict"
 
     # Stop accelerator determination if nothing-value is received
-    content === nothing ? (return) : nothing
+    #content === nothing ? (return) : nothing
 
     # Currently, force statments are the strongest, then consider strategies
-    if varDict["runtime_switch"]
+    if varDict["runtime_switch"] || first_run
         if varDict["force_cpu"] || varDict["force_gpu"]
 
             # FORCING
